@@ -35,6 +35,7 @@ struct Point final
 	Point(void)
 		: x(0), y(0), capacity(0) {};
 	
+	explicit
 	Point(CoordinateType x, CoordinateType y, uint64_t capacity)
 		: x(x), y(y), capacity(capacity) {};
 

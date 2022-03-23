@@ -69,7 +69,8 @@ public:
 	 * @param distance_function A pointer to a \e dynamically allocated object of type
 	 *                          \c CORE_FUNCTION_TYPE cast to `void*`.
 	 */
-	explicit PlanarMetric(void* distance_function);
+	explicit
+	PlanarMetric(void* distance_function);
 
 	/**
 	 * @brief Destructor
