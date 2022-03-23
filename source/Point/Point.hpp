@@ -10,9 +10,8 @@
 
 
 #include <cstdint> // fixed-width integers
+#include <map>
 #include <string>
-
-#define POINT_MAP_TYPE std::map<std::string, Point<CoordinateType>>
 
 
 
@@ -44,6 +43,13 @@ struct Point final
 		return (this->x < other.x) || ((this->x == other.x) && (this->y < other.y));
 	}
 };
+
+
+
+
+
+template<typename CoordinateType>
+using PointMap = std::map<std::string, Point<CoordinateType>>;
 
 
 

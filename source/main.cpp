@@ -12,7 +12,7 @@
 
 int main(void)
 {
-	std::map<std::string, Point<int>> points{{"1", Point(1, 2, 5)}, {"2", Point(1, 3, 5)}};
+	PointMap<int> points{{"1", Point(1, 2, 5)}, {"2", Point(1, 3, 5)}};
 	metric::PlanarMetric m1 = metric::Minkowski(1, points);
 	metric::PlanarMetric m2 = metric::Minkowski(2, points);
 	metric::PlanarMetric mi = metric::Minkowski(oo, points);
@@ -21,8 +21,8 @@ int main(void)
 
 	FacilityLayout<int> const facility_layout{points, m1};
 	std::set<std::string> const types{"A", "B", "C", "D"};
-	std::map<std::string, uint64_t> const in_capacities{{"A", 0}, {"B", 60}, {"C", 10}, {"D", 100}};
-	std::map<std::string, uint64_t> const out_capacities{{"A", 25}, {"B", 50}, {"C", 10}, {"D", 0}};
+	UnitCapacityMap<uint64_t> const in_capacities{{"A", 0}, {"B", 60}, {"C", 10}, {"D", 100}};
+	UnitCapacityMap<uint64_t> const out_capacities{{"A", 25}, {"B", 50}, {"C", 10}, {"D", 0}};
 	FASolver solver(facility_layout, types, in_capacities, out_capacities);
 	
 	return 0;

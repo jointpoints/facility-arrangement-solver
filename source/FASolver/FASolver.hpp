@@ -11,8 +11,14 @@
 
 #include "../PlanarMetric/PlanarMetric.hpp"
 #include <ilcplex/ilocplex.h>
-#include <map>
 #include <set>
+
+
+
+
+
+template<typename UnitType>
+using UnitCapacityMap = std::map<std::string, UnitType>;
 
 
 
@@ -21,8 +27,8 @@
 template<typename CoordinateType>
 struct FacilityLayout final
 {
-	POINT_MAP_TYPE       points;
-	metric::PlanarMetric distance;
+	PointMap<CoordinateType> points;
+	metric::PlanarMetric     distance;
 };
 
 
@@ -49,9 +55,9 @@ class FASolver final
 	/// Types of subjects
 	std::set<std::string> const             types;
 	/// Input capacities
-	std::map<std::string, UnitType> const   in_capacities;
+	UnitCapacityMap<UnitType> const         in_capacities;
 	/// Output capacities
-	std::map<std::string, UnitType> const   out_capacities;
+	UnitCapacityMap<UnitType> const         out_capacities;
 	/// @}
 
 

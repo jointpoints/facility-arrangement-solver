@@ -11,7 +11,6 @@
 
 #include "../Point/Point.hpp"
 #include <functional> // std::function
-#include <map>
 #include <cmath>
 
 #define METRIC_RETURN_TYPE long double
@@ -135,7 +134,7 @@ public:
  * distance.
  */
 template <typename CoordinateType>
-PlanarMetric const Minkowski(uint8_t order, POINT_MAP_TYPE const& points)
+PlanarMetric const Minkowski(uint8_t order, PointMap<CoordinateType> const& points)
 {
 	CORE_FUNCTION_TYPE* dist = nullptr;
 
@@ -167,7 +166,7 @@ PlanarMetric const Minkowski(uint8_t order, POINT_MAP_TYPE const& points)
 
 
 template <typename CoordinateType>
-PlanarMetric const PostOffice(uint8_t order, POINT_MAP_TYPE const& points, Point<CoordinateType> const post_office = {0, 0, 0})
+PlanarMetric const PostOffice(uint8_t order, PointMap<CoordinateType> const& points, Point<CoordinateType> const post_office = {0, 0, 0})
 {
 	CORE_FUNCTION_TYPE* dist = nullptr;
 
