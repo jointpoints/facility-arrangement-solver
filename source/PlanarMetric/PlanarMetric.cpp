@@ -9,14 +9,10 @@
 
 
 metric::PlanarMetric::PlanarMetric(void* distance_function)
-	: dist(distance_function) {};
+	: dist(distance_function) {}
 
 
 
 
 
-metric::PlanarMetric::~PlanarMetric(void)
-{
-	delete this->dist;
-	return;
-}
+metric::PlanarMetric::~PlanarMetric(void) {}

@@ -11,6 +11,7 @@
 
 #include "../Point/Point.hpp"
 #include <functional> // std::function
+#include <memory>
 #include <cmath>
 
 #define METRIC_RETURN_TYPE long double
@@ -51,7 +52,7 @@ namespace metric
 class PlanarMetric
 {
 	/// Stored Callable object to measure distances
-	void* const dist;
+	std::shared_ptr<void> const dist;
 
 
 
@@ -98,9 +99,10 @@ public:
 	 * \c METRIC_RETURN_TYPE.
 	 */
 	template<typename CoordinateType>
+		requires numeric<CoordinateType>
 	METRIC_RETURN_TYPE const operator()(Point<CoordinateType> const& point1, Point<CoordinateType> const& point2) const
 	{
-		return (*reinterpret_cast<CORE_FUNCTION_TYPE*>(this->dist))(point1, point2);
+		return (*reinterpret_cast<CORE_FUNCTION_TYPE*>(this->dist.get()))(point1, point2);
 	}
 
 	/// @}
@@ -135,6 +137,7 @@ public:
  * distance.
  */
 template <typename CoordinateType>
+	requires numeric<CoordinateType>
 PlanarMetric const Minkowski(uint8_t order, PointMap<CoordinateType> const& points)
 {
 	CORE_FUNCTION_TYPE* dist = nullptr;
@@ -167,6 +170,7 @@ PlanarMetric const Minkowski(uint8_t order, PointMap<CoordinateType> const& poin
 
 
 template <typename CoordinateType>
+	requires numeric<CoordinateType>
 PlanarMetric const PostOffice(uint8_t order, PointMap<CoordinateType> const& points, Point<CoordinateType> const post_office = {0, 0, 0})
 {
 	CORE_FUNCTION_TYPE* dist = nullptr;

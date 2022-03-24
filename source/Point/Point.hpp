@@ -9,9 +9,17 @@
 
 
 
+#include <concepts>
 #include <cstdint> // fixed-width integers
 #include <map>
 #include <string>
+
+
+
+
+
+template<typename X>
+concept numeric = std::integral<X> || std::floating_point<X>;
 
 
 
@@ -23,7 +31,8 @@
  *
  * Represents a place within a facility where subjects can be placed.
  */
-template <typename CoordinateType>
+template<typename CoordinateType>
+	requires numeric<CoordinateType>
 struct Point final
 {
 	CoordinateType x;
@@ -50,6 +59,7 @@ struct Point final
 
 
 template<typename CoordinateType>
+	requires numeric<CoordinateType>
 using PointMap = std::map<std::string, Point<CoordinateType>>;
 
 

@@ -21,6 +21,7 @@ struct SubjectType final
 {
 	UnitType    in_capacity;
 	UnitType    out_capacity;
+	UnitType    total_generated_units;
 	AreaType    area;
 	uint64_t    initially_available;
 	long double price;
