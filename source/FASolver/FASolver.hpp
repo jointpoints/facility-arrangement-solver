@@ -104,17 +104,17 @@ class FASolver final
 	/// Sequence of types
 	std::vector<std::string>                type_names;
 	/// Input capacities
-	CplexUnitArray                          cplex_in_capacity;
+	CplexUnitArray                          cplex_data_in_capacity;
 	/// Output capacities
-	CplexUnitArray                          cplex_out_capacity;
+	CplexUnitArray                          cplex_data_out_capacity;
 	/// Total number of units all subjects of each type are supposed to generate
-	CplexUnitArray                          cplex_total_generated_units;
+	CplexUnitArray                          cplex_data_total_generated_units;
 	/// Areas
-	CplexAreaArray                          cplex_area;
+	CplexAreaArray                          cplex_data_area;
 	/// Initially available subjects
-	IloIntArray                             cplex_initially_available;
+	IloIntArray                             cplex_data_initially_available;
 	/// Price of a single subject
-	IloNumArray                             cplex_price;
+	IloNumArray                             cplex_data_price;
 	/// Total flows
 	FlowMap<UnitType> const                 total_flows;
 
@@ -189,21 +189,21 @@ FASolver<CoordinateType, UnitType, AreaType>::FASolver(FacilityLayout<Coordinate
 
 	// Generate CPLEX-compatible data out of the given information
 	this->type_names = std::vector<std::string>();
-	this->cplex_in_capacity = CplexUnitArray(this->cplex_environment, 0);
-	this->cplex_out_capacity = CplexUnitArray(this->cplex_environment, 0);
-	this->cplex_total_generated_units = CplexUnitArray(this->cplex_environment, 0);
-	this->cplex_area = CplexAreaArray(this->cplex_environment, 0);
-	this->cplex_initially_available = IloIntArray(this->cplex_environment, 0);
-	this->cplex_price = IloNumArray(this->cplex_environment, 0);
+	this->cplex_data_in_capacity = CplexUnitArray(this->cplex_environment, 0);
+	this->cplex_data_out_capacity = CplexUnitArray(this->cplex_environment, 0);
+	this->cplex_data_total_generated_units = CplexUnitArray(this->cplex_environment, 0);
+	this->cplex_data_area = CplexAreaArray(this->cplex_environment, 0);
+	this->cplex_data_initially_available = IloIntArray(this->cplex_environment, 0);
+	this->cplex_data_price = IloNumArray(this->cplex_environment, 0);
 	for (auto const& [type, features] : types)
 	{
 		this->type_names.push_back(type);
-		this->cplex_in_capacity.add(features.in_capacity);
-		this->cplex_out_capacity.add(features.out_capacity);
-		this->cplex_total_generated_units.add(features.total_generated_units);
-		this->cplex_area.add(features.area);
-		this->cplex_initially_available.add(features.initially_available);
-		this->cplex_price.add(features.price);
+		this->cplex_data_in_capacity.add(features.in_capacity);
+		this->cplex_data_out_capacity.add(features.out_capacity);
+		this->cplex_data_total_generated_units.add(features.total_generated_units);
+		this->cplex_data_area.add(features.area);
+		this->cplex_data_initially_available.add(features.initially_available);
+		this->cplex_data_price.add(features.price);
 	}
 
 	return;
@@ -238,48 +238,131 @@ void FASolver<CoordinateType, UnitType, AreaType>::optimise(long double const al
 	// 3. Number of subjects in each point
 	std::map<std::string, IloIntVarArray> cplex_x_subject_count;
 	// 4. Additional subjects to buy
-	IloIntVarArray cplex_x_additional_subjects(this->cplex_environment, type_count, 0, IloInfinity);
+	IloIntVarArray cplex_x_additional_subjects(this->cplex_environment, type_count, 0, IloIntMax);
+	cplex_x_additional_subjects.setNames("nt");
 
-	// Total flow cost
+	// Total flow cost (one of the terms of the objective function)
 	IloNumExpr cplex_total_flow_cost(this->cplex_environment, 0.0);
 
-	// Constraint: input does not exceed the input capacity
-	std::map<std::pair<std::string, std::string>, IloNumExpr> cplex_in_flow;
-
-	// Constraint: output does not exceed the output capacity
-	std::map<std::pair<std::string, std::string>, IloNumExpr> cplex_out_flow;
+	// Constraint (1): input does not exceed the input capacity (iterated over all types and then over all points)
+	std::map<std::pair<std::string, std::string>, IloIntExpr> cplex_constr_in_flow;
+	// Constraint (2): output does not exceed the output capacity (iterated over all types and then over all points)
+	std::map<std::pair<std::string, std::string>, IloIntExpr> cplex_constr_out_flow;
+	// Constraint (3): the area occupied by the subjects in one place/point does not exceed its area capacity (iterated over all points)
+	std::map<std::string, IloIntExpr> cplex_constr_occupied_area;
+	// Constraint (4): weak Kirchhoff condition
+	//     reuse `cplex_constr_out_flow` and `cplex_constr_in_flow` for this
+	// Constraint (5): flow from all subjects of type i to all subjects of type j equals the respective total flow
+	// Constraint (6): all generated units by subjects of each type add up to the respective total number of generated units
+	// Constraint (7): all subjects are placed somewhere
 
 	// Initialisation of variables, `cplex_total_flow_cost` and constraints
-	for (auto const& type1 : this->type_names)
+	for (uint64_t type1_i = 0; type1_i < type_count; ++type1_i)
 	{
-		cplex_x_generated.emplace(type1, IloIntVarArray(this->cplex_environment, point_count, 0, IloInfinity));
-		cplex_x_subject_count.emplace(type1, IloIntVarArray(this->cplex_environment, point_count, 0, IloInfinity));
-		for (auto const& type2 : this->type_names)
+		auto const& type1 = this->type_names[type1_i];
+		
+		cplex_x_generated.emplace(type1, IloIntVarArray(this->cplex_environment, point_count, 0, IloIntMax));
+		cplex_x_generated[type1].setNames(("g_" + type1).data());
+		cplex_x_subject_count.emplace(type1, IloIntVarArray(this->cplex_environment, point_count, 0, IloIntMax));
+		cplex_x_subject_count[type1].setNames(("n_" + type1).data());
+		
+		for (uint64_t point1_i = 0; point1_i < point_count; ++point1_i)
 		{
-			cplex_x_flow.insert({{type1, type2}, {}});
-			for (auto const& [point_name1, point1] : this->facility_layout.points)
+			auto const& [point_name1, point1] = *std::next(this->facility_layout.points.begin(), point1_i);
+				
+			cplex_constr_out_flow.try_emplace({type1, point_name1}, IloIntExpr(this->cplex_environment, 0));
+			cplex_constr_occupied_area.try_emplace(point_name1, IloIntExpr(this->cplex_environment, 0));
+				
+			cplex_constr_occupied_area[point_name1] += cplex_data_area[type1_i] * cplex_x_subject_count[type1][point1_i];
+
+			for (auto const& type2 : this->type_names)
 			{
-				cplex_in_flow.try_emplace({type1, point_name1}, IloNumExpr(this->cplex_environment, 0.0));
-				cplex_out_flow.try_emplace({type1, point_name1}, IloNumExpr(this->cplex_environment, 0.0));
+				cplex_x_flow.insert({{type1, type2}, {}});
+				
 				for (auto const& [point_name2, point2] : this->facility_layout.points)
 				{
-					cplex_x_flow[{type1, type2}].insert({{point_name1, point_name2}, IloIntVar(this->cplex_environment, 0, IloInfinity)});
+					cplex_constr_in_flow.try_emplace({type2, point_name2}, IloIntExpr(this->cplex_environment, 0));
+					cplex_x_flow[{type1, type2}].insert({{point_name1, point_name2}, IloIntVar(this->cplex_environment, 0, IloIntMax, ("f_" + type1 + type2 + "_" + point_name1 + "," + point_name2).data())});
+					
 					cplex_total_flow_cost += (IloNum)this->facility_layout.distance(point1, point2) * cplex_x_flow[{type1, type2}][{point_name1, point_name2}];
-					cplex_in_flow[{type1, point_name1}] += cplex_x_flow[{type2, type1}][{point_name2, point_name1}];
-					cplex_out_flow[{type1, point_name1}] += cplex_x_flow[{type1, type2}][{point_name1, point_name2}];
+					
+					cplex_constr_in_flow[{type2, point_name2}] += cplex_x_flow[{type1, type2}][{point_name1, point_name2}];
+					cplex_constr_out_flow[{type1, point_name1}] += cplex_x_flow[{type1, type2}][{point_name1, point_name2}];
 				}
 			}
 		}
-		// Add constraints that have already been finalised
+	}
+
+	// Add constraints
+	{
+		uint64_t type1_i = 0;
+		for (auto const& type1 : this->type_names)
+		{
+			uint64_t point_i = 0;
+			for (auto const& [point_name, point] : this->facility_layout.points)
+			{
+				// (1)
+				cplex_model.add
+				(
+					cplex_constr_in_flow[{type1, point_name}] <= cplex_x_subject_count[type1][point_i] * this->cplex_data_in_capacity[type1_i]
+				);
+				// (2)
+				cplex_model.add
+				(
+					cplex_constr_out_flow[{type1, point_name}] <= cplex_x_subject_count[type1][point_i] * this->cplex_data_out_capacity[type1_i]
+				);
+				// (4)
+				cplex_model.add
+				(
+					cplex_constr_out_flow[{type1, point_name}] <= cplex_x_generated[type1][point_i] + cplex_constr_in_flow[{type1, point_name}]
+				);
+				++point_i;
+			}
+			for (auto const& type2 : this->type_names)
+			{
+				IloIntExpr accumulated_sum(this->cplex_environment, 0);
+				for (auto const& [point_name1, point1] : this->facility_layout.points)
+					for (auto const& [point_name2, point2] : this->facility_layout.points)
+						accumulated_sum += cplex_x_flow[{type1, type2}][{point_name1, point_name2}];
+				// (5)
+				cplex_model.add
+				(
+					accumulated_sum == (IloNum)(this->total_flows.at(type1).at(type2))
+				);
+			}
+			// (6)
+			cplex_model.add
+			(
+				IloSum(cplex_x_generated[type1]) == this->cplex_data_total_generated_units[type1_i]
+			);
+			// (7)
+			cplex_model.add
+			(
+				IloSum(cplex_x_subject_count[type1]) == this->cplex_data_initially_available[type1_i] + cplex_x_additional_subjects[type1_i]
+			);
+			++type1_i;
+		}
 		for (auto const& [point_name, point] : this->facility_layout.points)
-			cplex_model.add(cplex_in_flow[{}])
+		{
+			// (3)
+			cplex_model.add
+			(
+				cplex_constr_occupied_area[point_name] <= (IloInt)point.capacity
+			);
+		}
 	}
 
 	// Objective function
 	cplex_model.add(IloMinimize(this->cplex_environment,
-		/* additional cost */        alpha  * IloScalProd(this->cplex_price, cplex_x_additional_subjects) +
+		/* additional cost */        alpha  * IloScalProd(this->cplex_data_price, cplex_x_additional_subjects) +
 		/* total flow cost */ (2.L - alpha) * cplex_total_flow_cost
 	));
+
+	IloCplex cplex(cplex_model);
+	cplex.solve();
+	//cplex.exportModel("test.lp");
+
+	return;
 }
 
 
