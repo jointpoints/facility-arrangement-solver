@@ -2,5 +2,7 @@ cl -std:c++20 -EHsc -MD -c -I "D:\Programs\CPLEX\cplex\include" -I "D:\Programs\
 
 cl -std:c++20 -EHsc -MD -c -I "D:\Programs\CPLEX\cplex\include" -I "D:\Programs\CPLEX\concert\include" -I "D:\Programs\VisualStudio2022\VC\Tools\MSVC\14.31.31103\include" -I "C:\Program Files (x86)\Windows Kits\10\Include\10.0.19041.0\ucrt" -Fo"PlanarMetric.o" "PlanarMetric\PlanarMetric.cpp"
 
+cl -std:c++20 -EHsc -MD -c -I "D:\Programs\CPLEX\cplex\include" -I "D:\Programs\CPLEX\concert\include" -I "D:\Programs\VisualStudio2022\VC\Tools\MSVC\14.31.31103\include" -I "C:\Program Files (x86)\Windows Kits\10\Include\10.0.19041.0\ucrt" -Fo"Logger.o" "Logger\Logger.cpp"
 
-cl main.o PlanarMetric.o "D:\Programs\CPLEX\cplex\lib\x64_windows_msvc14\stat_mda\cplex2010.lib" "D:\Programs\CPLEX\cplex\lib\x64_windows_msvc14\stat_mda\ilocplex.lib" "D:\Programs\CPLEX\concert\lib\x64_windows_msvc14\stat_mda\concert.lib" -link -LIBPATH:"D:\Programs\VisualStudio2022\VC\Tools\MSVC\14.31.31103\lib\x64" -LIBPATH:"C:\Program Files (x86)\Windows Kits\10\Lib\10.0.19041.0\um\x64" -LIBPATH:"C:\Program Files (x86)\Windows Kits\10\Lib\10.0.19041.0\ucrt\x64"
+
+cl main.o PlanarMetric.o Logger.o "D:\Programs\CPLEX\cplex\lib\x64_windows_msvc14\stat_mda\cplex2010.lib" "D:\Programs\CPLEX\cplex\lib\x64_windows_msvc14\stat_mda\ilocplex.lib" "D:\Programs\CPLEX\concert\lib\x64_windows_msvc14\stat_mda\concert.lib" -link -LIBPATH:"D:\Programs\VisualStudio2022\VC\Tools\MSVC\14.31.31103\lib\x64" -LIBPATH:"C:\Program Files (x86)\Windows Kits\10\Lib\10.0.19041.0\um\x64" -LIBPATH:"C:\Program Files (x86)\Windows Kits\10\Lib\10.0.19041.0\ucrt\x64"

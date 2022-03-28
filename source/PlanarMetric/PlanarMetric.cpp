@@ -8,11 +8,11 @@
 
 
 
-metric::PlanarMetric::PlanarMetric(void* distance_function)
+PlanarMetric::PlanarMetric(void* distance_function)
 	: dist(distance_function) {}
 
 
 
 
 
-metric::PlanarMetric::~PlanarMetric(void) {}
+PlanarMetric::~PlanarMetric(void) {}

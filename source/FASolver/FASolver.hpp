@@ -11,6 +11,7 @@
 
 #include "../PlanarMetric/PlanarMetric.hpp"
 #include "../SubjectType/SubjectType.hpp"
+#include "../Logger/Logger.hpp"
 #include <ilcplex/ilocplex.h>
 #include <type_traits>
 #include <numeric>
@@ -58,12 +59,12 @@ template<typename CoordinateType>
 struct FacilityLayout final
 {
 	PointMap<CoordinateType> points;
-	metric::PlanarMetric     distance;
+	PlanarMetric             distance;
 
 
 
 	explicit
-	FacilityLayout(PointMap<CoordinateType> const& points, metric::PlanarMetric const& distance)
+	FacilityLayout(PointMap<CoordinateType> const& points, PlanarMetric const& distance)
 		: points(points), distance(distance) {};
 };
 
@@ -225,6 +226,13 @@ template<typename CoordinateType, typename UnitType, typename AreaType>
 	requires numeric<CoordinateType> && numeric<UnitType> && numeric<AreaType>
 void FASolver<CoordinateType, UnitType, AreaType>::optimise(long double const alpha) const
 {
+	// Set up a logger
+	int logger_status = 0;
+	Logger logger("test.txt", logger_status);
+	// !!!!! TODO: Logger assertions !!!!!
+	std::cout << logger_status << '\n';
+	logger.info("Log started.");
+
 	IloModel cplex_model(this->cplex_environment);
 
 	uint64_t const point_count = this->facility_layout.points.size();

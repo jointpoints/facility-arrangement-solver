@@ -1,0 +1,127 @@
+/**
+ * @file Logger.hpp
+ * @author Andrew Eliseev (JointPoints), 2022, github.com/jointpoints
+ */
+#ifndef __FASOLVER_LOGGER_HPP__
+#define __FASOLVER_LOGGER_HPP__
+
+
+
+
+
+#include <fstream>
+#include <memory>
+#include <string>
+
+
+
+
+
+#define FASOLVER_LOGGER_TO_CONSOLE std::cout
+#define FASOLVER_LOGGER_NO_LOG     ""
+
+#define FASOLVER_LOGGER_STATUS_OK           0b000
+#define FASOLVER_LOGGER_STATUS_BAD_PARENT   0b001
+#define FASOLVER_LOGGER_STATUS_BAD_FILENAME 0b010
+#define FASOLVER_LOGGER_STATUS_BAD_FILE     0b100
+
+
+
+
+
+class Logger final
+{
+	/// File output stream of log (only used when logging is performed into the file)
+	std::basic_ofstream<char8_t> output_stream;
+
+	class LoggerCore;
+
+	/// A unique pointer to the core logger interface
+	std::unique_ptr<LoggerCore> core;
+
+
+
+public:
+	/// @name Constructors & destructors
+	/// @{
+
+	Logger(void) = delete;
+	Logger(Logger&) = delete;
+	Logger(Logger&&) = delete;
+
+	/**
+	 * @brief Construct a logger for the given file
+	 *
+	 * Creates a new logger connected to the specified file.
+	 */
+	explicit
+	Logger(std::string const path, int& status_code) noexcept;
+
+	/**
+	 * @brief Construct a logger to the given stream
+	 *
+	 * Creates a new logger connected to the specified output stream.
+	 */
+	explicit
+	Logger(std::basic_ostream<char8_t>& output_stream, int& status_code) noexcept;
+
+	/**
+	 * @brief Destroy the logger
+	 *
+	 * Properly destroys the logger object.
+	 */
+	~Logger(void);
+
+	/// @}
+
+
+
+	/// @name I/O
+	/// @{
+
+	void info(std::string const message) const;
+
+	/// @}
+};
+
+
+
+
+
+class Logger::LoggerCore final
+{
+	/// The output stream
+	std::basic_ostream<char8_t>& output_stream;
+
+
+
+public:
+	/// @name Constructors and destructors
+	/// @{
+
+	LoggerCore(void) = delete;
+
+	/**
+	 * @brief Construct a logger core
+	 *
+	 * Creates a core logger interface for the given output stream.
+	 */
+	LoggerCore(std::basic_ostream<char8_t>& output_stream);
+	
+	/// @}
+
+
+
+	/// @name
+	/// @{
+
+	void info(std::string const message) const;
+
+	/// @}
+};
+
+
+
+
+
+#endif // __FASOLVER_LOGGER_HPP__

@@ -25,21 +25,6 @@
 
 
 /**
- * @namespace metric
- * @brief Tools to measure distances in 2D
- *
- * This namespace contains utilities related to measuring distances between points in 2D.
- * Even though it is called \c metric, distance functions are not really expected to be
- * metrics in the mathematical sense of this word.
- */
-namespace metric
-{
-
-
-
-
-
-/**
  * @class PlanarMetric
  * @brief Generalised functor to measure distances between points in 2D
  *
@@ -107,6 +92,21 @@ public:
 
 	/// @}
 };
+
+
+
+
+
+/**
+ * @namespace metric
+ * @brief Tools to measure distances in 2D
+ *
+ * This namespace contains utilities related to measuring distances between points in 2D.
+ * Even though it is called \c metric, distance functions are not really expected to be
+ * metrics in the mathematical sense of this word.
+ */
+namespace metric
+{
 
 
 
