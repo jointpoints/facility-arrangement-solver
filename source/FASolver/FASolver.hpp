@@ -94,9 +94,6 @@ class FASolver final
 	/// CPLEX environemnt responsible for memory allocation of all Concert objects.
 	IloEnv cplex_environment;
 
-	/// Log file
-	std::fstream log;
-
 	/// @name Problem data
 	/// @{
 
@@ -234,6 +231,7 @@ void FASolver<CoordinateType, UnitType, AreaType>::optimise(long double const al
 	logger.info("Log started.");
 
 	IloModel cplex_model(this->cplex_environment);
+	logger.info("CPLEX environment has been created.");
 
 	uint64_t const point_count = this->facility_layout.points.size();
 	uint64_t const type_count = this->type_names.size();
@@ -265,6 +263,7 @@ void FASolver<CoordinateType, UnitType, AreaType>::optimise(long double const al
 	// Constraint (7): all subjects are placed somewhere
 
 	// Initialisation of variables, `cplex_total_flow_cost` and constraints
+	logger.info("Initialisation of variables and constraints has started...");
 	for (uint64_t type1_i = 0; type1_i < type_count; ++type1_i)
 	{
 		auto const& type1 = this->type_names[type1_i];
@@ -300,8 +299,10 @@ void FASolver<CoordinateType, UnitType, AreaType>::optimise(long double const al
 			}
 		}
 	}
+	logger.info("Initialisation of variables and constraints has finished.");
 
 	// Add constraints
+	logger.info("Model construction has started...");
 	{
 		uint64_t type1_i = 0;
 		for (auto const& type1 : this->type_names)
@@ -365,9 +366,13 @@ void FASolver<CoordinateType, UnitType, AreaType>::optimise(long double const al
 		/* additional cost */        alpha  * IloScalProd(this->cplex_data_price, cplex_x_additional_subjects) +
 		/* total flow cost */ (2.L - alpha) * cplex_total_flow_cost
 	));
+	logger.info("Model has been constructed.");
 
 	IloCplex cplex(cplex_model);
+	cplex.setOut(logger.getInfoCallback());
+	logger.info("CPLEX output:");
 	cplex.solve();
+	logger.info("CPLEX output has been finished.");
 	//cplex.exportModel("test.lp");
 
 	return;

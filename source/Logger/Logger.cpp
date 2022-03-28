@@ -58,6 +58,9 @@ Logger::Logger(std::string const path, int& status_code) noexcept
 	// Assign the new stream to the universal interface
 	this->core.reset(new LoggerCore(this->output_stream));
 
+	// Create a callback
+	this->callback.reset(new LoggerOStream(this));
+
 	status_code = FASOLVER_LOGGER_STATUS_OK;
 
 	return;
@@ -71,6 +74,10 @@ Logger::Logger(std::basic_ostream<char8_t>& output_stream, int& status_code) noe
 {
 	// Assign the given stream to the universal interface
 	this->core.reset(new LoggerCore(output_stream));
+
+	// Create a callback
+	this->callback.reset(new LoggerOStream(this));
+
 	status_code = FASOLVER_LOGGER_STATUS_OK;
 	return;
 }
@@ -100,6 +107,78 @@ void Logger::info(std::string const message) const
 
 
 
+std::ostream& Logger::getInfoCallback(void) const
+{
+	return *this->callback;
+}
+
+
+
+
+
+// Methods of Logger::LoggerStreamBuf
+
+
+
+
+
+Logger::LoggerStreamBuf::int_type Logger::LoggerStreamBuf::overflow(int_type c)
+{
+	if (!traits_type::eq_int_type(c, traits_type::eof()))
+	{
+		*this->pptr() = traits_type::to_char_type(c);
+		this->pbump(1);
+	}
+	return this->sync() ? traits_type::not_eof(c) : traits_type::eof();
+}
+
+
+
+
+
+int Logger::LoggerStreamBuf::sync(void)
+{
+	if (this->pbase() != this->pptr())
+	{
+		logger->info(std::string(this->pbase(), this->pptr()));
+		this->setp(this->pbase(), this->epptr());
+	}
+	return 0;
+}
+
+
+
+
+
+Logger::LoggerStreamBuf::LoggerStreamBuf(Logger* const logger)
+	: logger(logger)
+{
+	this->setp(this->buffer, this->buffer + sizeof(this->buffer) - 1);
+	return;
+}
+
+
+
+
+
+// Methods of Logger::LoggerOStream
+
+
+
+
+
+Logger::LoggerOStream::LoggerOStream(Logger* const logger)
+	: basic_ostream(static_cast<std::basic_streambuf<char8_t>*>(this))
+	, LoggerStreamBuf(logger)
+{
+	this->flags(std::ios_base::unitbuf);
+	return;
+}
+
+
+
+
+
 // Methods of Logger::LoggerCore
 
 
@@ -115,6 +194,6 @@ Logger::LoggerCore::LoggerCore(std::basic_ostream<char8_t>& output_stream)
 
 void Logger::LoggerCore::info(std::string const message) const
 {
-	this->output_stream << (timestamp() + " INFO    | " + message).data();
+	this->output_stream << (timestamp() + " INFO    | " + message + "\n").data();
 	return;
 }

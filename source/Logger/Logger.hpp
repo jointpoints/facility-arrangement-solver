@@ -29,15 +29,26 @@
 
 
 
+/**
+ * @class Logger
+ * @brief Logs actions of the program
+ *
+ * Objects of this class output the text data related to the execution of the program.
+ */
 class Logger final
 {
 	/// File output stream of log (only used when logging is performed into the file)
 	std::basic_ofstream<char8_t> output_stream;
 
 	class LoggerCore;
+	class LoggerStreamBuf;
+	class LoggerOStream;
 
 	/// A unique pointer to the core logger interface
 	std::unique_ptr<LoggerCore> core;
+
+	/// A callback output stream to redirect log data of, e.g., some library into this logger
+	std::unique_ptr<LoggerOStream> callback;
 
 
 
@@ -80,6 +91,63 @@ public:
 	/// @{
 
 	void info(std::string const message) const;
+
+	std::ostream const& getInfoCallback(void) const;
+
+	/// @}
+};
+
+
+
+
+
+class Logger::LoggerStreamBuf
+	: public std::basic_streambuf<char8_t>
+{
+	/// A pointer to the enclosing object
+	Logger* const logger;
+	/// Buffer
+	char_type buffer[1024];
+
+	/// Overload of the `overflow` method
+	int_type overflow(int_type c) override;
+	/// Overload of the `sync` method
+	int sync(void) override;
+
+
+
+public:
+	/// @name Constructors & destructors
+	/// @{
+
+	/**
+	 * @brief Constructor
+	 *
+	 * Constructs a new log callback stream buffer.
+	 */
+	LoggerStreamBuf(Logger* const logger);
+
+	/// @}
+};
+
+
+
+
+
+class Logger::LoggerOStream final
+	: public std::basic_ostream<char8_t>,
+	  private virtual Logger::LoggerStreamBuf
+{
+public:
+	/// @name Constructors & destructors
+	/// @{
+
+	/**
+	 * @brief Constructor
+	 *
+	 * Constructs a new log callback stream.
+	 */
+	LoggerOStream(Logger* const logger);
 
 	/// @}
 };
