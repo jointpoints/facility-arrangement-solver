@@ -6,6 +6,7 @@
 #include <filesystem>
 #include <format>
 #include <chrono>
+#include <vector>
 
 
 
@@ -59,7 +60,7 @@ Logger::Logger(std::string const path, int& status_code) noexcept
 	this->core.reset(new LoggerCore(this->output_stream));
 
 	// Create a callback
-	this->callback.reset(new LoggerOStream(this));
+	this->info_callback.reset(new LoggerOStream(this, &Logger::info));
 
 	status_code = FASOLVER_LOGGER_STATUS_OK;
 
@@ -76,7 +77,7 @@ Logger::Logger(std::basic_ostream<char8_t>& output_stream, int& status_code) noe
 	this->core.reset(new LoggerCore(output_stream));
 
 	// Create a callback
-	this->callback.reset(new LoggerOStream(this));
+	this->info_callback.reset(new LoggerOStream(this, &Logger::info));
 
 	status_code = FASOLVER_LOGGER_STATUS_OK;
 	return;
@@ -109,7 +110,7 @@ void Logger::info(std::string const message) const
 
 std::ostream& Logger::getInfoCallback(void) const
 {
-	return *this->callback;
+	return *this->info_callback;
 }
 
 
@@ -140,7 +141,23 @@ int Logger::LoggerStreamBuf::sync(void)
 {
 	if (this->pbase() != this->pptr())
 	{
-		logger->info(std::string(this->pbase(), this->pptr()));
+		// Split message from the buffer into lines
+		std::vector<std::string> lines;
+		char *begin = this->pbase();
+		char *end = this->pbase();
+		while (end != this->pptr())
+			if (*end == '\n')
+			{
+				lines.emplace_back(begin, end);
+				begin = end + 1;
+				end = begin;
+			}
+			else
+				++end;
+		// Send all lines to the callback
+		for (auto const& line : lines)
+			(this->logger->*callback_function)(line);
+		// Reset buffer
 		this->setp(this->pbase(), this->epptr());
 	}
 	return 0;
@@ -150,8 +167,9 @@ int Logger::LoggerStreamBuf::sync(void)
 
 
 
-Logger::LoggerStreamBuf::LoggerStreamBuf(Logger* const logger)
+Logger::LoggerStreamBuf::LoggerStreamBuf(Logger* const logger, void (Logger::*callback_function)(std::string const) const)
 	: logger(logger)
+	, callback_function(callback_function)
 {
 	this->setp(this->buffer, this->buffer + sizeof(this->buffer) - 1);
 	return;
@@ -167,9 +185,10 @@ Logger::LoggerStreamBuf::LoggerStreamBuf(Logger* const logger)
 
 
 
-Logger::LoggerOStream::LoggerOStream(Logger* const logger)
-	: basic_ostream(static_cast<std::basic_streambuf<char8_t>*>(this))
-	, LoggerStreamBuf(logger)
+//Logger::LoggerOStream::LoggerOStream(Logger* const logger)
+Logger::LoggerOStream::LoggerOStream(Logger* const logger, void (Logger::*callback_function)(std::string const) const)
+	: basic_ostream(static_cast<std::streambuf*>(this))
+	, LoggerStreamBuf(logger, callback_function)
 {
 	this->flags(std::ios_base::unitbuf);
 	return;

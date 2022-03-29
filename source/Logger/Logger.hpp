@@ -48,7 +48,7 @@ class Logger final
 	std::unique_ptr<LoggerCore> core;
 
 	/// A callback output stream to redirect log data of, e.g., some library into this logger
-	std::unique_ptr<LoggerOStream> callback;
+	std::unique_ptr<std::ostream> info_callback;
 
 
 
@@ -92,7 +92,7 @@ public:
 
 	void info(std::string const message) const;
 
-	std::ostream const& getInfoCallback(void) const;
+	std::ostream& getInfoCallback(void) const;
 
 	/// @}
 };
@@ -102,10 +102,12 @@ public:
 
 
 class Logger::LoggerStreamBuf
-	: public std::basic_streambuf<char8_t>
+	: public std::streambuf
 {
 	/// A pointer to the enclosing object
 	Logger* const logger;
+	/// A pointer to the enclosing object's callback function
+	void (Logger::*callback_function)(std::string const) const;
 	/// Buffer
 	char_type buffer[1024];
 
@@ -125,7 +127,7 @@ public:
 	 *
 	 * Constructs a new log callback stream buffer.
 	 */
-	LoggerStreamBuf(Logger* const logger);
+	LoggerStreamBuf(Logger* const logger, void (Logger::*callback_function)(std::string const) const);
 
 	/// @}
 };
@@ -135,8 +137,8 @@ public:
 
 
 class Logger::LoggerOStream final
-	: public std::basic_ostream<char8_t>,
-	  private virtual Logger::LoggerStreamBuf
+	: public std::ostream
+	, private virtual Logger::LoggerStreamBuf
 {
 public:
 	/// @name Constructors & destructors
@@ -147,7 +149,7 @@ public:
 	 *
 	 * Constructs a new log callback stream.
 	 */
-	LoggerOStream(Logger* const logger);
+	LoggerOStream(Logger* const logger, void (Logger::*callback_function)(std::string const) const);
 
 	/// @}
 };

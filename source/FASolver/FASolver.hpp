@@ -370,8 +370,10 @@ void FASolver<CoordinateType, UnitType, AreaType>::optimise(long double const al
 
 	IloCplex cplex(cplex_model);
 	cplex.setOut(logger.getInfoCallback());
-	logger.info("CPLEX output:");
+	logger.info("CPLEX output starts now");
+	logger.info("========================= CPLEX OUTPUT START =========================");
 	cplex.solve();
+	logger.info("========================= CPLEX OUTPUT  END  =========================");
 	logger.info("CPLEX output has been finished.");
 	//cplex.exportModel("test.lp");
 
