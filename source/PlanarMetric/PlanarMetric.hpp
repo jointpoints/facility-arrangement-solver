@@ -56,7 +56,7 @@ public:
 	 *                          \c CORE_FUNCTION_TYPE cast to `void*`.
 	 */
 	explicit
-	PlanarMetric(void* distance_function);
+	PlanarMetric(void* distance_function) noexcept;
 
 	/**
 	 * @brief Destructor

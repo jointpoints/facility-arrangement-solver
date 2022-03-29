@@ -15,6 +15,7 @@
 #include <ilcplex/ilocplex.h>
 #include <type_traits>
 #include <numeric>
+#include <chrono>
 #include <vector>
 #include <set>
 
@@ -227,11 +228,9 @@ void FASolver<CoordinateType, UnitType, AreaType>::optimise(long double const al
 	int logger_status = 0;
 	Logger logger("test.txt", logger_status);
 	// !!!!! TODO: Logger assertions !!!!!
-	std::cout << logger_status << '\n';
 	logger.info("Log started.");
 
 	IloModel cplex_model(this->cplex_environment);
-	logger.info("CPLEX environment has been created.");
 
 	uint64_t const point_count = this->facility_layout.points.size();
 	uint64_t const type_count = this->type_names.size();
@@ -263,7 +262,8 @@ void FASolver<CoordinateType, UnitType, AreaType>::optimise(long double const al
 	// Constraint (7): all subjects are placed somewhere
 
 	// Initialisation of variables, `cplex_total_flow_cost` and constraints
-	logger.info("Initialisation of variables and constraints has started...");
+	auto const initialisation_start_time = std::chrono::high_resolution_clock::now();
+	logger.info("Initialisation of model (variables and constraints) has started...");
 	for (uint64_t type1_i = 0; type1_i < type_count; ++type1_i)
 	{
 		auto const& type1 = this->type_names[type1_i];
@@ -299,10 +299,12 @@ void FASolver<CoordinateType, UnitType, AreaType>::optimise(long double const al
 			}
 		}
 	}
-	logger.info("Initialisation of variables and constraints has finished.");
+	auto const initialisation_runtime = std::chrono::high_resolution_clock::now() - initialisation_start_time;
+	auto const initialisation_runtime_hms = std::chrono::hh_mm_ss(initialisation_runtime);
+	logger.info("Initialisation of model has finished.");
 
 	// Add constraints
-	logger.info("Model construction has started...");
+	logger.info("Model preparation has started...");
 	{
 		uint64_t type1_i = 0;
 		for (auto const& type1 : this->type_names)
@@ -366,16 +368,38 @@ void FASolver<CoordinateType, UnitType, AreaType>::optimise(long double const al
 		/* additional cost */        alpha  * IloScalProd(this->cplex_data_price, cplex_x_additional_subjects) +
 		/* total flow cost */ (2.L - alpha) * cplex_total_flow_cost
 	));
-	logger.info("Model has been constructed.");
+	logger.info("Model has been prepared for computations.");
 
 	IloCplex cplex(cplex_model);
 	cplex.setOut(logger.getInfoCallback());
+	cplex.setWarning(logger.getWarningCallback());
+	cplex.setError(logger.getErrorCallback());
 	logger.info("CPLEX output starts now");
 	logger.info("========================= CPLEX OUTPUT START =========================");
+	auto const computation_start_time = std::chrono::high_resolution_clock::now();
 	cplex.solve();
+	auto const computation_runtime = std::chrono::high_resolution_clock::now() - computation_start_time;
+	auto const computation_runtime_hms = std::chrono::hh_mm_ss(computation_runtime);
 	logger.info("========================= CPLEX OUTPUT  END  =========================");
-	logger.info("CPLEX output has been finished.");
-	//cplex.exportModel("test.lp");
+	logger.info("CPLEX has halted, its output has been finished.");
+
+	// Print the time
+	auto const total_runtime_hms = std::chrono::hh_mm_ss(initialisation_runtime + computation_runtime);
+	logger.info("\nTime statistics");
+	logger.info("\tTime spent on model intialisation = "
+		+ std::to_string(initialisation_runtime_hms.hours().count()) + " h. "
+		+ std::to_string(initialisation_runtime_hms.minutes().count()) + " m. "
+		+ std::to_string(initialisation_runtime_hms.seconds().count()) + " s.");
+	logger.info("\t        Time spent on computation = "
+		+ std::to_string(computation_runtime_hms.hours().count()) + " h. "
+		+ std::to_string(computation_runtime_hms.minutes().count()) + " m. "
+		+ std::to_string(computation_runtime_hms.seconds().count()) + " s.");
+	logger.info("\t                                    ------------------------------");
+	logger.info("\t                            TOTAL = "
+		+ std::to_string(total_runtime_hms.hours().count()) + " h. "
+		+ std::to_string(total_runtime_hms.minutes().count()) + " m. "
+		+ std::to_string(total_runtime_hms.seconds().count()) + " s.");
+	logger.info("\nLog finished.");
 
 	return;
 }

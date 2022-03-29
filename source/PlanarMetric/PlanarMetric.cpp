@@ -8,7 +8,7 @@
 
 
 
-PlanarMetric::PlanarMetric(void* distance_function)
+PlanarMetric::PlanarMetric(void* distance_function) noexcept
 	: dist(distance_function) {}
 
 

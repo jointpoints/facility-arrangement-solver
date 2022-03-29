@@ -59,8 +59,10 @@ Logger::Logger(std::string const path, int& status_code) noexcept
 	// Assign the new stream to the universal interface
 	this->core.reset(new LoggerCore(this->output_stream));
 
-	// Create a callback
+	// Create callback streams
 	this->info_callback.reset(new LoggerOStream(this, &Logger::info));
+	this->warning_callback.reset(new LoggerOStream(this, &Logger::warning));
+	this->error_callback.reset(new LoggerOStream(this, &Logger::error));
 
 	status_code = FASOLVER_LOGGER_STATUS_OK;
 
@@ -76,8 +78,10 @@ Logger::Logger(std::basic_ostream<char8_t>& output_stream, int& status_code) noe
 	// Assign the given stream to the universal interface
 	this->core.reset(new LoggerCore(output_stream));
 
-	// Create a callback
+	// Create callback streams
 	this->info_callback.reset(new LoggerOStream(this, &Logger::info));
+	this->warning_callback.reset(new LoggerOStream(this, &Logger::warning));
+	this->error_callback.reset(new LoggerOStream(this, &Logger::error));
 
 	status_code = FASOLVER_LOGGER_STATUS_OK;
 	return;
@@ -103,6 +107,16 @@ void Logger::info(std::string const message) const
 	this->core->info(message);
 	return;
 }
+void Logger::warning(std::string const message) const
+{
+	this->core->warning(message);
+	return;
+}
+void Logger::error(std::string const message) const
+{
+	this->core->error(message);
+	return;
+}
 
 
 
@@ -111,6 +125,14 @@ void Logger::info(std::string const message) const
 std::ostream& Logger::getInfoCallback(void) const
 {
 	return *this->info_callback;
+}
+std::ostream& Logger::getWarningCallback(void) const
+{
+	return *this->warning_callback;
+}
+std::ostream& Logger::getErrorCallback(void) const
+{
+	return *this->error_callback;
 }
 
 
@@ -141,22 +163,8 @@ int Logger::LoggerStreamBuf::sync(void)
 {
 	if (this->pbase() != this->pptr())
 	{
-		// Split message from the buffer into lines
-		std::vector<std::string> lines;
-		char *begin = this->pbase();
-		char *end = this->pbase();
-		while (end != this->pptr())
-			if (*end == '\n')
-			{
-				lines.emplace_back(begin, end);
-				begin = end + 1;
-				end = begin;
-			}
-			else
-				++end;
-		// Send all lines to the callback
-		for (auto const& line : lines)
-			(this->logger->*callback_function)(line);
+		// Invoke callback
+		(this->logger->*callback_function)(std::string(this->pbase(), this->pptr()));
 		// Reset buffer
 		this->setp(this->pbase(), this->epptr());
 	}
@@ -213,6 +221,64 @@ Logger::LoggerCore::LoggerCore(std::basic_ostream<char8_t>& output_stream)
 
 void Logger::LoggerCore::info(std::string const message) const
 {
-	this->output_stream << (timestamp() + " INFO    | " + message + "\n").data();
+	// Split message from the buffer into lines
+	std::vector<std::string> lines;
+	char const *begin = message.data();
+	char const *end = message.data();
+	while (end != message.data() + message.size())
+		if (*end == '\n')
+		{
+			lines.emplace_back(begin, end);
+			begin = end + 1;
+			end = begin;
+		}
+		else
+			++end;
+	if ((std::string(begin, end) != "\n") && (std::string(begin, end) != ""))
+		lines.emplace_back(begin, end);
+	for (auto const& line : lines)
+		this->output_stream << (timestamp() + " INFO    | " + line + "\n").data();
+	return;
+}
+void Logger::LoggerCore::warning(std::string const message) const
+{
+	// Split message from the buffer into lines
+	std::vector<std::string> lines;
+	char const *begin = message.data();
+	char const *end = message.data();
+	while (end != message.data() + message.size())
+		if (*end == '\n')
+		{
+			lines.emplace_back(begin, end);
+			begin = end + 1;
+			end = begin;
+		}
+		else
+			++end;
+	if ((std::string(begin, end) != "\n") && (std::string(begin, end) != ""))
+		lines.emplace_back(begin, end);
+	for (auto const& line : lines)
+		this->output_stream << (timestamp() + " WARNING | " + line + "\n").data();
+	return;
+}
+void Logger::LoggerCore::error(std::string const message) const
+{
+	// Split message from the buffer into lines
+	std::vector<std::string> lines;
+	char const *begin = message.data();
+	char const *end = message.data();
+	while (end != message.data() + message.size())
+		if (*end == '\n')
+		{
+			lines.emplace_back(begin, end);
+			begin = end + 1;
+			end = begin;
+		}
+		else
+			++end;
+	if ((std::string(begin, end) != "\n") && (std::string(begin, end) != ""))
+		lines.emplace_back(begin, end);
+	for (auto const& line : lines)
+		this->output_stream << (timestamp() + " ERROR   | " + line + "\n").data();
 	return;
 }
