@@ -26,13 +26,15 @@
 
 /**
  * @class PlanarMetric
- * @brief Generalised functor to measure distances between points in 2D
+ * @brief Functor to measure distances between points in 2D
  *
  * This functor (a class whose objects provide an interface similar to Callable) enables
  * the computation of distance between any two points from two-dimensional space with
- * coordinates of the specified in advance type.
+ * coordinates of the specified in advance type. Even though it is called \e metric,
+ * distance functions are not really expected to be metrics in the mathematical sense of
+ * this word.
  * 
- * @note Intended to only be used within FacilityLayout class.
+ * @note Intended to only be used within FacilityLayout.
  */
 class PlanarMetric
 {
@@ -75,7 +77,7 @@ public:
 	/**
 	 * @brief Compute distance
 	 *
-	 * Makes a call of distance function passed as the constructor argument.
+	 * Makes a call of the distance function that was passed as the constructor argument.
 	 * 
 	 * @param point1 One Point from the 2D plane.
 	 * @param point2 Another Point from the 2D plane.
@@ -99,11 +101,9 @@ public:
 
 /**
  * @namespace metric
- * @brief Tools to measure distances in 2D
+ * @brief Convenience tools to measure distances in 2D
  *
  * This namespace contains utilities related to measuring distances between points in 2D.
- * Even though it is called \c metric, distance functions are not really expected to be
- * metrics in the mathematical sense of this word.
  */
 namespace metric
 {
@@ -115,16 +115,16 @@ namespace metric
 /**
  * @brief Get an instance of Minkowski metric
  *
- * Generates an instance of Minkowski metric with the given order for a coordinate type
+ * Generates an instance of Minkowski metric of the given order for a coordinate type
  * used in the given map of points.
  * 
- * Minkowski metric for points @f$\overrightarrow{x}@f$ and @f$\overrightarrow{y}@f$
- * from @f$\mathbb{R}^d@f$ of order @f$n \in \mathbb{N}@f$ is defined as follows:
+ * Minkowski metric of order @f$n \in \mathbb{N}@f$ for points @f$\overrightarrow{x}@f$
+ * and @f$\overrightarrow{y}@f$ from @f$\mathbb{R}^d@f$ is defined as follows:
  * 
  * @f[M_n(\overrightarrow{x}, \overrightarrow{y}) = \left(  \sum_{i = 1}^d |x_i - y_i|^n  \right)^\frac{1}{n} @f]
  * 
- * Minkowski metric for points @f$\overrightarrow{x}@f$ and @f$\overrightarrow{y}@f$
- * from @f$\mathbb{R}^d@f$ of order @f$n = \infty$ is defined as follows:
+ * Minkowski metric of order @f$n = \infty$ for points @f$\overrightarrow{x}@f$ and
+ * @f$\overrightarrow{y}@f$ from @f$\mathbb{R}^d@f$ is defined as follows:
  * 
  * @f[M_\infty(\overrightarrow{x}, \overrightarrow{y}) = \max_{i = 1}^d \left(  |x_i - y_i|  \right) @f]
  * 
@@ -133,8 +133,8 @@ namespace metric
  * @param points A map of points. Only needed to derive the type of their coordinates,
  *               never actually used. I.e., no distances are precomputed in advance.
  * 
- * @returns A constant PlanarMetric instance ready to use to compute the Minkowski
- * distance.
+ * @returns A constant PlanarMetric instance ready to use for computation of Minkowski
+ * metric.
  */
 template <typename CoordinateType>
 	requires numeric<CoordinateType>

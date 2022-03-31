@@ -66,14 +66,26 @@ template<typename CoordinateType>
 	requires numeric<CoordinateType>
 struct FacilityLayout final
 {
+	/// Collection of named points where subjects can be placed
 	PointMap<CoordinateType> points;
+	/// A metric to measure distances between points
 	PlanarMetric             distance;
 
 
 
+	/// @name Constructors & destructors
+	/// @{
+	
+	/**
+	 * @brief Constructor
+	 *
+	 * Constructs a new facility layout.
+	 */
 	explicit
 	FacilityLayout(PointMap<CoordinateType> const& points, PlanarMetric const& distance) noexcept
 		: points(points), distance(distance) {};
+	
+	/// @}
 };
 
 
@@ -84,22 +96,22 @@ struct FacilityLayout final
  * @class FASolver
  * @brief Facility Arrangement Problem solver
  *
- * Runs the optimisation process for the given Facility Arrangement Problem instance
- * with the help of CPLEX.
+ * Objects of this class let run the optimisation processes for the fixed Facility
+ * Arrangement Problem instance with the help of CPLEX.
  */
 template<typename CoordinateType, typename UnitType, typename AreaType>
 	requires numeric<CoordinateType> && numeric<UnitType> && numeric<AreaType>
 class FASolver final
 {
-	/// Type of CPLEX array to store unit values (e.g., flows)
+	/// CPLEX numerical type to store unit values (e.g., flows)
 	using CplexUnitType = std::conditional<std::is_integral<UnitType>::value, IloInt, IloNum>::type;
 
-	/// Type of CPLEX array to store area values
+	/// CPLEX numerical type to store area values
 	using CplexAreaType = std::conditional<std::is_integral<AreaType>::value, IloInt, IloNum>::type;
 
 
 
-	/// CPLEX environemnt responsible for memory allocation of all Concert objects.
+	/// CPLEX environemnt responsible for memory management for all Concert Technology objects.
 	IloEnv cplex_environment;
 
 	/// @name Problem data
@@ -111,7 +123,8 @@ class FASolver final
 	SubjectTypeMap<UnitType, AreaType> const&   types;
 	/// Sequence of types
 	std::vector<std::string>                    type_names;
-	/// Price of a single subject
+	/// Price of a single subject (dupticates the \c price field of SubjectType for
+	/// further convenience, may be deleted in the future)
 	IloNumArray                                 cplex_data_price;
 	/// Total flows
 	FlowMap<UnitType> const                     total_flows;
@@ -129,8 +142,14 @@ public:
 	/**
 	 * @brief Constructor from data
 	 *
-	 * Constructs a new FASolver object relying on the provided data about the instance
-	 * of the problem to solve.
+	 * Constructs a new FASolver object for the provided instance of the problem to
+	 * solve.
+	 * 
+	 * @param facility_layout Description of the available facility layout.
+	 * @param types Features of different types of subjects.
+	 * @param total_flows A map of maps containing pairs of a kind `<i : <j : f>>`
+	 *                    where \c f is the total flow from all subjects of type
+	 *                    \c i into all subjects of type \c j.
 	 */
 	explicit
 	FASolver(FacilityLayout<CoordinateType> const&      facility_layout,
@@ -152,10 +171,12 @@ public:
 	/// @{
 
 	/**
-	 * @brief Solve MILP version of the problem
+	 * @brief Solve the problem
 	 *
 	 * Runs a solver for mixed-integer linear program associated with the given
-	 * instance of Facility Arrangement Problem.
+	 * instance of the Facility Arrangement Problem.
+	 * 
+	 * @param alpha A hyperparameter of the problem.
 	 */
 	void optimise(long double const alpha = 1.L) const;
 
