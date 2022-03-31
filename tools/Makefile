@@ -12,6 +12,7 @@ WINKITS_PATH = C:\Program Files (x86)\Windows Kits
 BUILD_PATH = Facility Arrangement Solver ($(FASOLVER_TESTBUILD)build for Windows, v.$(FASOLVER_VERSION))
 
 build : win_prepare win_build win_link win_setup win_clean
+debug : win_prepare win_build_debug win_link win_setup win_clean
 else
 #	Setup for Linux
 endif
@@ -48,3 +49,14 @@ win_main :
 
 win_Logger_generic :
 	cl -std:c++latest -EHsc -MD -c -I "$(CPLEX_PATH)\cplex\include" -I "$(CPLEX_PATH)\concert\include" -I "$(MSVC_PATH)\include" -I "$(WINKITS_PATH)\10\Include\10.0.19041.0\ucrt" -Fo"$(OBJ_PATH)\Logger.obj" "..\$(SOURCE_PATH)\Logger\Logger.cpp"
+
+win_build_debug : $(addprefix win_,$(addsuffix _generic_debug,$(BUILD_UNITS))) win_main_debug
+
+win_%_generic_debug :
+	cl -std:c++20 -Z7 -EHsc -MD -c -I "$(CPLEX_PATH)\cplex\include" -I "$(CPLEX_PATH)\concert\include" -I "$(MSVC_PATH)\include" -I "$(WINKITS_PATH)\10\Include\10.0.19041.0\ucrt" -Fo"$(OBJ_PATH)\$*.obj" "..\$(SOURCE_PATH)\$*\$*.cpp"
+
+win_main_debug :
+	cl -std:c++20 -Z7 -EHsc -MD -c -I "$(CPLEX_PATH)\cplex\include" -I "$(CPLEX_PATH)\concert\include" -I "$(MSVC_PATH)\include" -I "$(WINKITS_PATH)\10\Include\10.0.19041.0\ucrt" -Fo"$(OBJ_PATH)\main.obj" "..\$(SOURCE_PATH)\main.cpp"
+
+win_Logger_generic_debug :
+	cl -std:c++latest -Z7 -EHsc -MD -c -I "$(CPLEX_PATH)\cplex\include" -I "$(CPLEX_PATH)\concert\include" -I "$(MSVC_PATH)\include" -I "$(WINKITS_PATH)\10\Include\10.0.19041.0\ucrt" -Fo"$(OBJ_PATH)\Logger.obj" "..\$(SOURCE_PATH)\Logger\Logger.cpp"
