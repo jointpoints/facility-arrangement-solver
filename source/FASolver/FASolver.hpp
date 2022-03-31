@@ -55,6 +55,13 @@ using DistanceMap = std::map<std::pair<Point<CoordinateType>, Point<CoordinateTy
 
 
 
+/**
+ * @class FacilityLayout
+ * @brief Containter for the facility layout
+ *
+ * Facility layout is determined by a map of points where subjects can be put and a
+ * metric that defines distances between them.
+ */
 template<typename CoordinateType>
 	requires numeric<CoordinateType>
 struct FacilityLayout final
@@ -65,7 +72,7 @@ struct FacilityLayout final
 
 
 	explicit
-	FacilityLayout(PointMap<CoordinateType> const& points, PlanarMetric const& distance)
+	FacilityLayout(PointMap<CoordinateType> const& points, PlanarMetric const& distance) noexcept
 		: points(points), distance(distance) {};
 };
 
@@ -85,10 +92,12 @@ template<typename CoordinateType, typename UnitType, typename AreaType>
 class FASolver final
 {
 	/// Type of CPLEX array to store unit values (e.g., flows)
-	using CplexUnitArray = std::conditional<std::is_integral<UnitType>::value, IloIntArray, IloNumArray>::type;
+	using CplexUnitType = std::conditional<std::is_integral<UnitType>::value, IloInt, IloNum>::type;
+	//using CplexUnitArray = std::conditional<std::is_integral<UnitType>::value, IloIntArray, IloNumArray>::type;
 
 	/// Type of CPLEX array to store area values
-	using CplexAreaArray = std::conditional<std::is_integral<AreaType>::value, IloIntArray, IloNumArray>::type;
+	using CplexAreaType = std::conditional<std::is_integral<AreaType>::value, IloInt, IloNum>::type;
+	//using CplexAreaArray = std::conditional<std::is_integral<AreaType>::value, IloIntArray, IloNumArray>::type;
 
 
 
@@ -100,18 +109,20 @@ class FASolver final
 
 	/// Facility layout
 	FacilityLayout<CoordinateType> const    facility_layout;
+	/// Subject types and their features
+	SubjectTypeMap<UnitType, AreaType> const& types;
 	/// Sequence of types
 	std::vector<std::string>                type_names;
 	/// Input capacities
-	CplexUnitArray                          cplex_data_in_capacity;
+	//CplexUnitArray                          cplex_data_in_capacity;
 	/// Output capacities
-	CplexUnitArray                          cplex_data_out_capacity;
+	//CplexUnitArray                          cplex_data_out_capacity;
 	/// Total number of units all subjects of each type are supposed to generate
-	CplexUnitArray                          cplex_data_total_generated_units;
+	//CplexUnitArray                          cplex_data_total_generated_units;
 	/// Areas
-	CplexAreaArray                          cplex_data_area;
+	//CplexAreaArray                          cplex_data_area;
 	/// Initially available subjects
-	IloIntArray                             cplex_data_initially_available;
+	//IloIntArray                             cplex_data_initially_available;
 	/// Price of a single subject
 	IloNumArray                             cplex_data_price;
 	/// Total flows
@@ -179,6 +190,7 @@ FASolver<CoordinateType, UnitType, AreaType>::FASolver(FacilityLayout<Coordinate
                                                        SubjectTypeMap<UnitType, AreaType> const&    types,
                                                        FlowMap<UnitType> const&                     total_flows)
 	: facility_layout(facility_layout)
+	, types(types)
 	, total_flows(total_flows)
 {
 	// Check that type names in `total_flows` completely coincide with type names in `types`
@@ -187,21 +199,21 @@ FASolver<CoordinateType, UnitType, AreaType>::FASolver(FacilityLayout<Coordinate
 	// ... TODO ...
 
 	// Generate CPLEX-compatible data out of the given information
-	this->type_names = std::vector<std::string>();
-	this->cplex_data_in_capacity = CplexUnitArray(this->cplex_environment, 0);
-	this->cplex_data_out_capacity = CplexUnitArray(this->cplex_environment, 0);
-	this->cplex_data_total_generated_units = CplexUnitArray(this->cplex_environment, 0);
-	this->cplex_data_area = CplexAreaArray(this->cplex_environment, 0);
-	this->cplex_data_initially_available = IloIntArray(this->cplex_environment, 0);
+	//this->type_names = std::vector<std::string>();
+	//this->cplex_data_in_capacity = CplexUnitArray(this->cplex_environment, 0);
+	//this->cplex_data_out_capacity = CplexUnitArray(this->cplex_environment, 0);
+	//this->cplex_data_total_generated_units = CplexUnitArray(this->cplex_environment, 0);
+	//this->cplex_data_area = CplexAreaArray(this->cplex_environment, 0);
+	//this->cplex_data_initially_available = IloIntArray(this->cplex_environment, 0);
 	this->cplex_data_price = IloNumArray(this->cplex_environment, 0);
 	for (auto const& [type, features] : types)
 	{
 		this->type_names.push_back(type);
-		this->cplex_data_in_capacity.add(features.in_capacity);
-		this->cplex_data_out_capacity.add(features.out_capacity);
-		this->cplex_data_total_generated_units.add(features.total_generated_units);
-		this->cplex_data_area.add(features.area);
-		this->cplex_data_initially_available.add(features.initially_available);
+		//this->cplex_data_in_capacity.add(features.in_capacity);
+		//this->cplex_data_out_capacity.add(features.out_capacity);
+		//this->cplex_data_total_generated_units.add(features.total_generated_units);
+		//this->cplex_data_area.add(features.area);
+		//this->cplex_data_initially_available.add(features.initially_available);
 		this->cplex_data_price.add(features.price);
 	}
 
@@ -280,7 +292,8 @@ void FASolver<CoordinateType, UnitType, AreaType>::optimise(long double const al
 			cplex_constr_out_flow.try_emplace({type1, point_name1}, IloIntExpr(this->cplex_environment, 0));
 			cplex_constr_occupied_area.try_emplace(point_name1, IloIntExpr(this->cplex_environment, 0));
 				
-			cplex_constr_occupied_area[point_name1] += cplex_data_area[type1_i] * cplex_x_subject_count[type1][point1_i];
+			//cplex_constr_occupied_area[point_name1] += cplex_data_area[type1_i] * cplex_x_subject_count[type1][point1_i];
+			cplex_constr_occupied_area[point_name1] += (CplexAreaType)this->types.at(type1).area * cplex_x_subject_count[type1][point1_i];
 
 			for (auto const& type2 : this->type_names)
 			{
@@ -315,12 +328,14 @@ void FASolver<CoordinateType, UnitType, AreaType>::optimise(long double const al
 				// (1)
 				cplex_model.add
 				(
-					cplex_constr_in_flow[{type1, point_name}] <= cplex_x_subject_count[type1][point_i] * this->cplex_data_in_capacity[type1_i]
+					//cplex_constr_in_flow[{type1, point_name}] <= cplex_x_subject_count[type1][point_i] * this->cplex_data_in_capacity[type1_i]
+					cplex_constr_in_flow[{type1, point_name}] <= cplex_x_subject_count[type1][point_i] * (CplexUnitType)this->types.at(type1).in_capacity
 				);
 				// (2)
 				cplex_model.add
 				(
-					cplex_constr_out_flow[{type1, point_name}] <= cplex_x_subject_count[type1][point_i] * this->cplex_data_out_capacity[type1_i]
+					//cplex_constr_out_flow[{type1, point_name}] <= cplex_x_subject_count[type1][point_i] * this->cplex_data_out_capacity[type1_i]
+					cplex_constr_out_flow[{type1, point_name}] <= cplex_x_subject_count[type1][point_i] * (CplexUnitType)this->types.at(type1).out_capacity
 				);
 				// (4)
 				cplex_model.add
@@ -344,12 +359,14 @@ void FASolver<CoordinateType, UnitType, AreaType>::optimise(long double const al
 			// (6)
 			cplex_model.add
 			(
-				IloSum(cplex_x_generated[type1]) == this->cplex_data_total_generated_units[type1_i]
+				//IloSum(cplex_x_generated[type1]) == this->cplex_data_total_generated_units[type1_i]
+				IloSum(cplex_x_generated[type1]) == (CplexUnitType)this->types.at(type1).total_generated_units
 			);
 			// (7)
 			cplex_model.add
 			(
-				IloSum(cplex_x_subject_count[type1]) == this->cplex_data_initially_available[type1_i] + cplex_x_additional_subjects[type1_i]
+				//IloSum(cplex_x_subject_count[type1]) == this->cplex_data_initially_available[type1_i] + cplex_x_additional_subjects[type1_i]
+				IloSum(cplex_x_subject_count[type1]) == (IloInt)this->types.at(type1).initially_available + cplex_x_additional_subjects[type1_i]
 			);
 			++type1_i;
 		}
