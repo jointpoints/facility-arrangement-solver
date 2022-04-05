@@ -274,6 +274,12 @@ void FASolver<CoordinateType, UnitType, AreaType>::optimise(long double const al
 	// Initialisation of variables, `cplex_total_flow_cost` and constraints
 	auto const initialisation_start_time = std::chrono::high_resolution_clock::now();
 	logger.info("Initialisation of model (variables and constraints) has started...");
+	for (auto const& type : this->type_names)
+		for (auto const& [point_name, point] : this->facility_layout.points)
+		{
+			cplex_constr_in_flow.try_emplace({type, point_name}, IloIntExpr(this->cplex_environment, 0));
+			cplex_constr_out_flow.try_emplace({type, point_name}, IloIntExpr(this->cplex_environment, 0));
+		}
 	for (auto const& type1 : this->type_names)
 	{
 		cplex_x_generated.emplace(type1, IloIntVarArray(this->cplex_environment, point_count, 0, IloIntMax));
@@ -284,27 +290,26 @@ void FASolver<CoordinateType, UnitType, AreaType>::optimise(long double const al
 		for (uint64_t point1_i = 0; point1_i < point_count; ++point1_i)
 		{
 			auto const& [point_name1, point1] = *std::next(this->facility_layout.points.begin(), point1_i);
-				
-			cplex_constr_out_flow.try_emplace({type1, point_name1}, IloIntExpr(this->cplex_environment, 0));
+			
 			cplex_constr_occupied_area.try_emplace(point_name1, IloIntExpr(this->cplex_environment, 0));
 				
 			cplex_constr_occupied_area[point_name1] += (CplexAreaType)this->types.at(type1).area * cplex_x_subject_count[type1][point1_i];
 
 			for (auto const& type2 : this->type_names)
-			{
-				cplex_x_flow.insert({{type1, type2}, {}});
-				
-				for (auto const& [point_name2, point2] : this->facility_layout.points)
+				if (this->total_flows.at(type1).at(type2) != 0)
 				{
-					cplex_constr_in_flow.try_emplace({type2, point_name2}, IloIntExpr(this->cplex_environment, 0));
-					cplex_x_flow[{type1, type2}].insert({{point_name1, point_name2}, IloIntVar(this->cplex_environment, 0, IloIntMax, ("f_" + type1 + type2 + "_" + point_name1 + "," + point_name2).data())});
+					cplex_x_flow.insert({{type1, type2}, {}});
 					
-					cplex_total_flow_cost += (IloNum)this->facility_layout.distance(point1, point2) * cplex_x_flow[{type1, type2}][{point_name1, point_name2}];
-					
-					cplex_constr_in_flow[{type2, point_name2}] += cplex_x_flow[{type1, type2}][{point_name1, point_name2}];
-					cplex_constr_out_flow[{type1, point_name1}] += cplex_x_flow[{type1, type2}][{point_name1, point_name2}];
+					for (auto const& [point_name2, point2] : this->facility_layout.points)
+					{
+						cplex_x_flow[{type1, type2}].insert({{point_name1, point_name2}, IloIntVar(this->cplex_environment, 0, IloIntMax, ("f_" + type1 + type2 + "_" + point_name1 + "," + point_name2).data())});
+						
+						cplex_total_flow_cost += (IloNum)this->facility_layout.distance(point1, point2) * cplex_x_flow[{type1, type2}][{point_name1, point_name2}];
+						
+						cplex_constr_in_flow[{type2, point_name2}] += cplex_x_flow[{type1, type2}][{point_name1, point_name2}];
+						cplex_constr_out_flow[{type1, point_name1}] += cplex_x_flow[{type1, type2}][{point_name1, point_name2}];
+					}
 				}
-			}
 		}
 	}
 	auto const initialisation_runtime = std::chrono::high_resolution_clock::now() - initialisation_start_time;
@@ -338,17 +343,18 @@ void FASolver<CoordinateType, UnitType, AreaType>::optimise(long double const al
 				++point_i;
 			}
 			for (auto const& type2 : this->type_names)
-			{
-				IloIntExpr accumulated_sum(this->cplex_environment, 0);
-				for (auto const& [point_name1, point1] : this->facility_layout.points)
-					for (auto const& [point_name2, point2] : this->facility_layout.points)
-						accumulated_sum += cplex_x_flow[{type1, type2}][{point_name1, point_name2}];
-				// (5)
-				cplex_model.add
-				(
-					accumulated_sum == (IloNum)(this->total_flows.at(type1).at(type2))
-				);
-			}
+				if (this->total_flows.at(type1).at(type2) != 0)
+				{
+					IloIntExpr accumulated_sum(this->cplex_environment, 0);
+					for (auto const& [point_name1, point1] : this->facility_layout.points)
+						for (auto const& [point_name2, point2] : this->facility_layout.points)
+							accumulated_sum += cplex_x_flow[{type1, type2}][{point_name1, point_name2}];
+					// (5)
+					cplex_model.add
+					(
+						accumulated_sum == (IloNum)(this->total_flows.at(type1).at(type2))
+					);
+				}
 			// (6)
 			cplex_model.add
 			(
