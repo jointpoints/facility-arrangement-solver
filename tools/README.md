@@ -20,6 +20,6 @@ also containing all necessary files to run it.
 * `make debug` - the same as `make build` but the executable also includes the debugging
 information (e.g., to debug or profile the program later).
 
-> **Note!** MSVC may produce some warning during compilation. These will appear because
+> **Note!** MSVC may produce some warnings during compilation. These will appear because
 MSVC is 
 [still not fully compliant with C++20 standard](https://en.cppreference.com/w/cpp/compiler_support/20).
