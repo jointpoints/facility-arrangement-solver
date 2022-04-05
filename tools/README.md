@@ -19,6 +19,8 @@ running `make` make sure to properly set the following variables in `Makefile`:
 also containing all necessary files to run it.
 * `make debug` - the same as `make build` but the executable also includes the debugging
 information (e.g., to debug or profile the program later).
+* `make docs` - compiles the development documentation in HTML format *(on Windows,
+administrator priviliges might be required)*.
 
 > **Note!** MSVC may produce some warnings during compilation. These will appear because
 MSVC is 

@@ -13,6 +13,7 @@ BUILD_PATH = Facility Arrangement Solver ($(FASOLVER_TESTBUILD)build for Windows
 
 build : win_prepare win_build win_link win_setup win_clean
 debug : win_prepare win_build_debug win_link win_setup win_clean
+docs : win_docs
 else
 #	Setup for Linux
 endif
@@ -60,3 +61,7 @@ win_main_debug :
 
 win_Logger_generic_debug :
 	cl -std:c++latest -Z7 -EHsc -MD -c -I "$(CPLEX_PATH)\cplex\include" -I "$(CPLEX_PATH)\concert\include" -I "$(MSVC_PATH)\include" -I "$(WINKITS_PATH)\10\Include\10.0.19041.0\ucrt" -Fo"$(OBJ_PATH)\Logger.obj" "..\$(SOURCE_PATH)\Logger\Logger.cpp"
+
+win_docs :
+	doxygen Doxyfile_docs
+	powershell New-Item -Path .\Documentation\Documentation.lnk -ItemType SymbolicLink -Value .\Documentation\html\index.html

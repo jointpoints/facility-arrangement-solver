@@ -123,7 +123,7 @@ namespace metric
  * 
  * @f[M_n(\overrightarrow{x}, \overrightarrow{y}) = \left(  \sum_{i = 1}^d |x_i - y_i|^n  \right)^\frac{1}{n} @f]
  * 
- * Minkowski metric of order @f$n = \infty$ for points @f$\overrightarrow{x}@f$ and
+ * Minkowski metric of order @f$n = \infty@f$ for points @f$\overrightarrow{x}@f$ and
  * @f$\overrightarrow{y}@f$ from @f$\mathbb{R}^d@f$ is defined as follows:
  * 
  * @f[M_\infty(\overrightarrow{x}, \overrightarrow{y}) = \max_{i = 1}^d \left(  |x_i - y_i|  \right) @f]

@@ -156,7 +156,7 @@ public:
 	void error(std::string const message) const;
 
 	/**
-	 * @brief Retrieve a reference for an informational callback strem
+	 * @brief Retrieve a reference for an informational callback stream
 	 *
 	 * Retrieves a regular output stream where other function can write their
 	 * information into. These messages will be printed with label "INFO".
@@ -169,7 +169,7 @@ public:
 	std::ostream& getInfoCallback(void) const;
 
 	/**
-	 * @brief Retrieve a reference for a warning callback strem
+	 * @brief Retrieve a reference for a warning callback stream
 	 *
 	 * Retrieves a regular output stream where other function can write their
 	 * warnings into. These messages will be printed with label "WARNING".
@@ -182,7 +182,7 @@ public:
 	std::ostream& getWarningCallback(void) const;
 
 	/**
-	 * @brief Retrieve a reference for an error callback strem
+	 * @brief Retrieve a reference for an error callback stream
 	 *
 	 * Retrieves a regular output stream where other function can write their
 	 * warnings into. These messages will be printed with label "ERROR".
