@@ -85,9 +85,9 @@ public:
 	 * @returns The distance between \c point1 and \c point2 as an instance of
 	 * \c METRIC_RETURN_TYPE.
 	 */
-	template<typename CoordinateType>
-		requires numeric<CoordinateType>
-	METRIC_RETURN_TYPE const operator()(Point<CoordinateType> const& point1, Point<CoordinateType> const& point2) const
+	template<typename CoordinateType, typename AreaType>
+		requires numeric<CoordinateType> && numeric<AreaType>
+	METRIC_RETURN_TYPE const operator()(Point<CoordinateType, AreaType> const& point1, Point<CoordinateType, AreaType> const& point2) const
 	{
 		return (*reinterpret_cast<CORE_FUNCTION_TYPE*>(this->dist.get()))(point1, point2);
 	}
@@ -136,9 +136,9 @@ namespace metric
  * @returns A constant PlanarMetric instance ready to use for computation of Minkowski
  * metric.
  */
-template <typename CoordinateType>
+template <typename CoordinateType, typename AreaType>
 	requires numeric<CoordinateType>
-PlanarMetric const Minkowski(uint8_t order, PointMap<CoordinateType> const& points)
+PlanarMetric const Minkowski(uint8_t order, PointMap<CoordinateType, AreaType> const& points)
 {
 	CORE_FUNCTION_TYPE* dist = nullptr;
 
@@ -169,9 +169,9 @@ PlanarMetric const Minkowski(uint8_t order, PointMap<CoordinateType> const& poin
 
 
 
-template <typename CoordinateType>
-	requires numeric<CoordinateType>
-PlanarMetric const PostOffice(uint8_t order, PointMap<CoordinateType> const& points, Point<CoordinateType> const post_office = {0, 0, 0})
+template <typename CoordinateType, typename AreaType>
+	requires numeric<CoordinateType> && numeric<AreaType>
+PlanarMetric const PostOffice(uint8_t order, PointMap<CoordinateType, AreaType> const& points, Point<CoordinateType, AreaType> const post_office = {0, 0, 0})
 {
 	CORE_FUNCTION_TYPE* dist = nullptr;
 

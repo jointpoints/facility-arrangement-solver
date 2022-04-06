@@ -26,19 +26,35 @@ concept numeric = std::integral<X> || std::floating_point<X>;
 
 
 
+template<typename UnitType>
+	requires numeric<UnitType>
+using UnitMap = std::map<std::string, UnitType>;
+
+template<typename UnitType>
+	requires numeric<UnitType>
+using FlowMap = std::map<std::string, UnitMap<UnitType>>;
+
+template<typename UnitType>
+	requires numeric<UnitType>
+using FacilityArrangementFlowMap = std::map<std::string, FlowMap<UnitType>>;
+
+
+
+
+
 /**
  * @class Point
  * @brief 2D point with capacity
  *
  * Represents a place within a facility where subjects can be placed.
  */
-template<typename CoordinateType>
-	requires numeric<CoordinateType>
-struct Point final
+template<typename CoordinateType, typename AreaType>
+	requires numeric<CoordinateType> && numeric<AreaType>
+struct Point
 {
 	CoordinateType x;
 	CoordinateType y;
-	uint64_t       capacity;
+	AreaType       capacity;
 
 
 
@@ -46,7 +62,7 @@ struct Point final
 		: x(0), y(0), capacity(0) {};
 	
 	explicit
-	Point(CoordinateType x, CoordinateType y, uint64_t capacity)
+	Point(CoordinateType x, CoordinateType y, AreaType capacity)
 		: x(x), y(y), capacity(capacity) {};
 
 	inline bool const operator<(Point const& other) const
@@ -59,9 +75,38 @@ struct Point final
 
 
 
-template<typename CoordinateType>
-	requires numeric<CoordinateType>
-using PointMap = std::map<std::string, Point<CoordinateType>>;
+/**
+ * @class FacilityArrangementPoint
+ * @brief 2D point with capacity to be used in completed facility arrangements
+ *
+ * Represents a place within a facility where subjects have been placed and their flows
+ * have been assigned.
+ */
+template<typename CoordinateType, typename AreaType, typename UnitType>
+	requires numeric<CoordinateType> && numeric<AreaType> && numeric<UnitType>
+struct FacilityArrangementPoint final
+	: public Point<CoordinateType, AreaType>
+{
+	UnitMap<uint64_t>                    subject_count;
+	FacilityArrangementFlowMap<UnitType> out_flows;
+
+
+
+	FacilityArrangementPoint(Point const& point)
+		: x(point.x), y(point.y), capacity(point.capacity), subject_count(), out_flows();
+};
+
+
+
+
+
+template<typename CoordinateType, typename AreaType>
+	requires numeric<CoordinateType> && numeric<AreaType>
+using PointMap = std::map<std::string, Point<CoordinateType, AreaType>>;
+
+template<typename CoordinateType, typename AreaType, typename UnitType>
+	requires numeric<CoordinateType> && numeric<AreaType> && numeric<UnitType>
+using FacilityArrangementPointMap = std::map<std::string, FacilityArrangementPoint<CoordinateType, AreaType, UnitType>>;
 
 
 
@@ -86,11 +131,11 @@ namespace points
  * Creates a facility layout in a form of a regular grid with preset equal distances
  * between neighbouring points and equal area capacities of each point.
  */
-template<typename CoordinateType>
-	requires numeric<CoordinateType>
-PointMap<CoordinateType> const grid(uint32_t const row_count, uint32_t const column_count, CoordinateType const distance, uint64_t capacity)
+template<typename CoordinateType, typename AreaType>
+	requires numeric<CoordinateType> && numeric<AreaType>
+PointMap<CoordinateType, AreaType> const grid(uint32_t const row_count, uint32_t const column_count, CoordinateType const distance, AreaType const capacity)
 {
-	PointMap<CoordinateType> answer;
+	PointMap<CoordinateType, AreaType> answer;
 
 	//for (uint32_t row_i : std::views::iota(0, row_count))
 	//	for (uint32_t column_i : std::views::iota(0, column_count))

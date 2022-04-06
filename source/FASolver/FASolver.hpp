@@ -9,7 +9,7 @@
 
 
 
-#include "../PlanarMetric/PlanarMetric.hpp"
+#include "../Facility/Facility.hpp"
 #include "../SubjectType/SubjectType.hpp"
 #include "../Logger/Logger.hpp"
 #include <ilcplex/ilocplex.h>
@@ -39,59 +39,6 @@ X successValue(void)
 
 
 
-template<typename UnitType>
-	requires numeric<UnitType>
-using UnitCapacityMap = std::map<std::string, UnitType>;
-
-template<typename UnitType>
-	requires numeric<UnitType>
-using FlowMap = std::map<std::string, UnitCapacityMap<UnitType>>;
-
-template<typename CoordinateType>
-	requires numeric<CoordinateType>
-using DistanceMap = std::map<std::pair<Point<CoordinateType>, Point<CoordinateType>>, long double>;
-
-
-
-
-
-/**
- * @class FacilityLayout
- * @brief Containter for the facility layout
- *
- * Facility layout is determined by a map of points where subjects can be put and a
- * metric that defines distances between them.
- */
-template<typename CoordinateType>
-	requires numeric<CoordinateType>
-struct FacilityLayout final
-{
-	/// Collection of named points where subjects can be placed
-	PointMap<CoordinateType> points;
-	/// A metric to measure distances between points
-	PlanarMetric             distance;
-
-
-
-	/// @name Constructors & destructors
-	/// @{
-	
-	/**
-	 * @brief Constructor
-	 *
-	 * Constructs a new facility layout.
-	 */
-	explicit
-	FacilityLayout(PointMap<CoordinateType> const& points, PlanarMetric const& distance) noexcept
-		: points(points), distance(distance) {};
-	
-	/// @}
-};
-
-
-
-
-
 /**
  * @class FASolver
  * @brief Facility Arrangement Problem solver
@@ -103,10 +50,10 @@ template<typename CoordinateType, typename UnitType, typename AreaType>
 	requires numeric<CoordinateType> && numeric<UnitType> && numeric<AreaType>
 class FASolver final
 {
-	/// CPLEX numerical type to store unit values (e.g., flows)
+	/// CPLEX numerical type to store unit values (e.g., flows).
 	using CplexUnitType = std::conditional<std::is_integral<UnitType>::value, IloInt, IloNum>::type;
 
-	/// CPLEX numerical type to store area values
+	/// CPLEX numerical type to store area values.
 	using CplexAreaType = std::conditional<std::is_integral<AreaType>::value, IloInt, IloNum>::type;
 
 
@@ -117,17 +64,17 @@ class FASolver final
 	/// @name Problem data
 	/// @{
 
-	/// Facility layout
-	FacilityLayout<CoordinateType> const        facility_layout;
-	/// Subject types and their features
-	SubjectTypeMap<UnitType, AreaType> const&   types;
-	/// Sequence of types
-	std::vector<std::string>                    type_names;
+	/// Facility layout.
+	FacilityLayout<CoordinateType, AreaType> const  facility_layout;
+	/// Subject types and their features.
+	SubjectTypeMap<UnitType, AreaType> const&       types;
+	/// Sequence of types.
+	std::vector<std::string>                        type_names;
 	/// Price of a single subject (dupticates the \c price field of SubjectType for
-	/// further convenience, may be deleted in the future)
-	IloNumArray                                 cplex_data_price;
-	/// Total flows
-	FlowMap<UnitType> const                     total_flows;
+	/// further convenience, may be deleted in the future).
+	IloNumArray                                     cplex_data_price;
+	/// Total flows.
+	FlowMap<UnitType> const                         total_flows;
 
 	/// @}
 
@@ -152,9 +99,9 @@ public:
 	 *                    \c i into all subjects of type \c j.
 	 */
 	explicit
-	FASolver(FacilityLayout<CoordinateType> const&      facility_layout,
-	         SubjectTypeMap<UnitType, AreaType> const&  types,
-	         FlowMap<UnitType> const&                   total_flows);
+	FASolver(FacilityLayout<CoordinateType, AreaType> const&    facility_layout,
+	         SubjectTypeMap<UnitType, AreaType> const&          types,
+	         FlowMap<UnitType> const&                           total_flows);
 
 	/**
 	 * @brief Destructor
@@ -195,9 +142,9 @@ public:
 
 template<typename CoordinateType, typename UnitType, typename AreaType>
 	requires numeric<CoordinateType> && numeric<UnitType> && numeric<AreaType>
-FASolver<CoordinateType, UnitType, AreaType>::FASolver(FacilityLayout<CoordinateType> const&        facility_layout,
-                                                       SubjectTypeMap<UnitType, AreaType> const&    types,
-                                                       FlowMap<UnitType> const&                     total_flows)
+FASolver<CoordinateType, UnitType, AreaType>::FASolver(FacilityLayout<CoordinateType, AreaType> const&  facility_layout,
+                                                       SubjectTypeMap<UnitType, AreaType> const&        types,
+                                                       FlowMap<UnitType> const&                         total_flows)
 	: facility_layout(facility_layout)
 	, types(types)
 	, total_flows(total_flows)
@@ -277,8 +224,8 @@ void FASolver<CoordinateType, UnitType, AreaType>::optimise(long double const al
 	for (auto const& type : this->type_names)
 		for (auto const& [point_name, point] : this->facility_layout.points)
 		{
-			cplex_constr_in_flow.try_emplace({type, point_name}, IloIntExpr(this->cplex_environment, 0));
-			cplex_constr_out_flow.try_emplace({type, point_name}, IloIntExpr(this->cplex_environment, 0));
+			cplex_constr_in_flow.emplace(std::make_pair(type, point_name), IloIntExpr(this->cplex_environment, 0));
+			cplex_constr_out_flow.emplace(std::make_pair(type, point_name), IloIntExpr(this->cplex_environment, 0));
 		}
 	for (auto const& type1 : this->type_names)
 	{
