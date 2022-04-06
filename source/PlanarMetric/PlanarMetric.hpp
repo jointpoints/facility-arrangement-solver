@@ -15,7 +15,7 @@
 #include <cmath>
 
 #define METRIC_RETURN_TYPE long double
-#define CORE_FUNCTION_TYPE std::function<METRIC_RETURN_TYPE(Point<CoordinateType> const&, Point<CoordinateType> const&)>
+#define CORE_FUNCTION_TYPE std::function<METRIC_RETURN_TYPE(Point<CoordinateType, AreaType> const&, Point<CoordinateType, AreaType> const&)>
 
 /// Infinity to use as metrics parameter
 #define oo (uint8_t)0
@@ -145,19 +145,19 @@ PlanarMetric const Minkowski(uint8_t order, PointMap<CoordinateType, AreaType> c
 	// If the order is either 1 or infinity, use simpler formulae
 	if (order == 1)
 		dist = new CORE_FUNCTION_TYPE
-		([order](Point<CoordinateType> const& point1, Point<CoordinateType> const& point2)
+		([order](Point<CoordinateType, AreaType> const& point1, Point<CoordinateType, AreaType> const& point2)
 		{
 			return std::abs(point1.x - point2.x) + std::abs(point1.y - point2.y);
 		});
 	else if (order == oo)
 		dist = new CORE_FUNCTION_TYPE
-		([order](Point<CoordinateType> const& point1, Point<CoordinateType> const& point2)
+		([order](Point<CoordinateType, AreaType> const& point1, Point<CoordinateType, AreaType> const& point2)
 		{
 			return std::max(std::abs(point1.x - point2.x), std::abs(point1.y - point2.y));
 		});
 	else
 		dist = new CORE_FUNCTION_TYPE
-		([order](Point<CoordinateType> const& point1, Point<CoordinateType> const& point2)
+		([order](Point<CoordinateType, AreaType> const& point1, Point<CoordinateType, AreaType> const& point2)
 		{
 			return std::pow(std::pow(std::abs(point1.x - point2.x), order) + std::pow(std::abs(point1.y - point2.y), order), 1.L / order);
 		});

@@ -58,8 +58,7 @@ struct Point
 
 
 
-	Point(void)
-		: x(0), y(0), capacity(0) {};
+	Point(void) = default;
 	
 	explicit
 	Point(CoordinateType x, CoordinateType y, AreaType capacity)
@@ -92,8 +91,17 @@ struct FacilityArrangementPoint final
 
 
 
-	FacilityArrangementPoint(Point const& point)
-		: x(point.x), y(point.y), capacity(point.capacity), subject_count(), out_flows();
+	FacilityArrangementPoint(void) = default;
+
+	FacilityArrangementPoint(Point<CoordinateType, AreaType> const& point)
+		: subject_count()
+		, out_flows()
+	{
+		this->x = point.x;
+		this->y = point.y;
+		this->capacity = point.capacity;
+		return;
+	};
 };
 
 
@@ -116,7 +124,7 @@ using FacilityArrangementPointMap = std::map<std::string, FacilityArrangementPoi
  * @namespace points
  * @brief Tools to create facilities
  *
- * Functions for convenient and rapid facility layout design.
+ * Functions for rapid facility layout design.
  */
 namespace points
 {
@@ -129,7 +137,7 @@ namespace points
  * @brief Create a regular grid
  *
  * Creates a facility layout in a form of a regular grid with preset equal distances
- * between neighbouring points and equal area capacities of each point.
+ * between neighbouring points and equal area capacities for all points.
  */
 template<typename CoordinateType, typename AreaType>
 	requires numeric<CoordinateType> && numeric<AreaType>

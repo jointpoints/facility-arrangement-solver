@@ -66,6 +66,16 @@ struct FacilityArrangement final
 	FacilityArrangementPointMap<CoordinateType, AreaType, UnitType> points;
 	/// A metric to measure distances between points
 	PlanarMetric distance;
+
+
+
+	FacilityArrangement(FacilityLayout<CoordinateType, AreaType> const& layout)
+		: distance(layout.distance)
+	{
+		for (auto const& [point_name, point] : layout.points)
+			this->points[point_name] = point;
+		return;
+	};
 };
 
 
