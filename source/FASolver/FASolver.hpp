@@ -11,8 +11,6 @@
 
 #include "../Facility/Facility.hpp"
 #include "../SubjectType/SubjectType.hpp"
-#include "../Logger/Logger.hpp"
-#include <ilcplex/ilocplex.h>
 #include <type_traits>
 #include <numeric>
 #include <chrono>
@@ -46,7 +44,7 @@ X successValue(void)
  * Objects of this class let run the optimisation processes for the fixed Facility
  * Arrangement Problem instance with the help of CPLEX.
  */
-template<typename CoordinateType, typename UnitType, typename AreaType>
+template<typename CoordinateType, typename AreaType, typename UnitType>
 	requires numeric<CoordinateType> && numeric<UnitType> && numeric<AreaType>
 class FASolver final
 {
@@ -67,7 +65,7 @@ class FASolver final
 	/// Facility layout.
 	FacilityLayout<CoordinateType, AreaType> const  facility_layout;
 	/// Subject types and their features.
-	SubjectTypeMap<UnitType, AreaType> const&       types;
+	SubjectTypeMap<AreaType, UnitType> const&       types;
 	/// Sequence of types.
 	std::vector<std::string>                        type_names;
 	/// Price of a single subject (dupticates the \c price field of SubjectType for
@@ -100,7 +98,7 @@ public:
 	 */
 	explicit
 	FASolver(FacilityLayout<CoordinateType, AreaType> const&    facility_layout,
-	         SubjectTypeMap<UnitType, AreaType> const&          types,
+	         SubjectTypeMap<AreaType, UnitType> const&          types,
 	         FlowMap<UnitType> const&                           total_flows);
 
 	/**
@@ -140,12 +138,13 @@ public:
 
 
 
-template<typename CoordinateType, typename UnitType, typename AreaType>
+template<typename CoordinateType, typename AreaType, typename UnitType>
 	requires numeric<CoordinateType> && numeric<UnitType> && numeric<AreaType>
-FASolver<CoordinateType, UnitType, AreaType>::FASolver(FacilityLayout<CoordinateType, AreaType> const&  facility_layout,
-                                                       SubjectTypeMap<UnitType, AreaType> const&        types,
+FASolver<CoordinateType, AreaType, UnitType>::FASolver(FacilityLayout<CoordinateType, AreaType> const&  facility_layout,
+                                                       SubjectTypeMap<AreaType, UnitType> const&        types,
                                                        FlowMap<UnitType> const&                         total_flows)
-	: facility_layout(facility_layout)
+	: cplex_environment()
+	, facility_layout(facility_layout)
 	, types(types)
 	, total_flows(total_flows)
 {
@@ -167,9 +166,9 @@ FASolver<CoordinateType, UnitType, AreaType>::FASolver(FacilityLayout<Coordinate
 
 
 
-template<typename CoordinateType, typename UnitType, typename AreaType>
+template<typename CoordinateType, typename AreaType, typename UnitType>
 	requires numeric<CoordinateType> && numeric<UnitType> && numeric<AreaType>
-FASolver<CoordinateType, UnitType, AreaType>::~FASolver(void)
+FASolver<CoordinateType, AreaType, UnitType>::~FASolver(void)
 {
 	this->cplex_environment.end();
 	return;
@@ -177,9 +176,9 @@ FASolver<CoordinateType, UnitType, AreaType>::~FASolver(void)
 
 
 
-template<typename CoordinateType, typename UnitType, typename AreaType>
+template<typename CoordinateType, typename AreaType, typename UnitType>
 	requires numeric<CoordinateType> && numeric<UnitType> && numeric<AreaType>
-void FASolver<CoordinateType, UnitType, AreaType>::optimise(long double const alpha) const
+void FASolver<CoordinateType, AreaType, UnitType>::optimise(long double const alpha) const
 {
 	// Set up a logger
 	int logger_status = 0;

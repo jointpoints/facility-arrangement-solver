@@ -61,7 +61,7 @@ struct Point
 	Point(void) = default;
 	
 	explicit
-	Point(CoordinateType x, CoordinateType y, AreaType capacity)
+	Point(CoordinateType const x, CoordinateType const y, AreaType const capacity)
 		: x(x), y(y), capacity(capacity) {};
 
 	inline bool const operator<(Point const& other) const
@@ -86,6 +86,7 @@ template<typename CoordinateType, typename AreaType, typename UnitType>
 struct FacilityArrangementPoint final
 	: public Point<CoordinateType, AreaType>
 {
+	AreaType                             remaining_capacity;
 	UnitMap<uint64_t>                    subject_count;
 	FacilityArrangementFlowMap<UnitType> out_flows;
 
@@ -93,15 +94,9 @@ struct FacilityArrangementPoint final
 
 	FacilityArrangementPoint(void) = default;
 
-	FacilityArrangementPoint(Point<CoordinateType, AreaType> const& point)
-		: subject_count()
-		, out_flows()
-	{
-		this->x = point.x;
-		this->y = point.y;
-		this->capacity = point.capacity;
-		return;
-	};
+	FacilityArrangementPoint(Point<CoordinateType, AreaType> const& point);
+
+	bool const addSubject(std::string const type_name, AreaType const area);
 };
 
 
@@ -115,6 +110,62 @@ using PointMap = std::map<std::string, Point<CoordinateType, AreaType>>;
 template<typename CoordinateType, typename AreaType, typename UnitType>
 	requires numeric<CoordinateType> && numeric<AreaType> && numeric<UnitType>
 using FacilityArrangementPointMap = std::map<std::string, FacilityArrangementPoint<CoordinateType, AreaType, UnitType>>;
+
+
+
+
+
+
+
+
+
+
+// Definitions of FacilityArrangementPoint template struct member functions
+
+
+
+
+
+template<typename CoordinateType, typename AreaType, typename UnitType>
+	requires numeric<CoordinateType> && numeric<AreaType> && numeric<UnitType>
+FacilityArrangementPoint<CoordinateType, AreaType, UnitType>::FacilityArrangementPoint(Point<CoordinateType, AreaType> const& point)
+	: remaining_capacity(point.capacity)
+	, subject_count()
+	, out_flows()
+{
+	this->x = point.x;
+	this->y = point.y;
+	this->capacity = point.capacity;
+	return;
+};
+
+
+
+
+
+template<typename CoordinateType, typename AreaType, typename UnitType>
+	requires numeric<CoordinateType> && numeric<AreaType> && numeric<UnitType>
+bool const FacilityArrangementPoint<CoordinateType, AreaType, UnitType>::addSubject(std::string const type_name, AreaType const area)
+{
+	if (this->remaining_capacity < area)
+		return false;
+	if (this->subject_count.contains(type_name))
+		++this->subject_count[type_name];
+	else
+		this->subject_count[type_name] = 1;
+	return true;
+}
+
+
+
+
+
+
+
+
+
+
+// Namespaces
 
 
 

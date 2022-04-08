@@ -16,7 +16,7 @@
 
 
 
-template<typename UnitType, typename AreaType>
+template<typename AreaType, typename UnitType>
 struct SubjectType final
 {
 	UnitType    in_capacity;
@@ -31,8 +31,8 @@ struct SubjectType final
 
 
 
-template<typename UnitType, typename AreaType>
-using SubjectTypeMap = std::map<std::string, SubjectType<UnitType, AreaType>>;
+template<typename AreaType, typename UnitType>
+using SubjectTypeMap = std::map<std::string, SubjectType<AreaType, UnitType>>;
 
 
 

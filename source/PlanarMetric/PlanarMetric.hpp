@@ -39,7 +39,7 @@
 class PlanarMetric
 {
 	/// Stored Callable object to measure distances
-	std::shared_ptr<void> const dist;
+	std::shared_ptr<void> dist;
 
 
 
@@ -47,7 +47,8 @@ public:
 	/// @name Constructors and destructors
 	/// @{
 
-	PlanarMetric(void) = delete;
+	PlanarMetric(void) = default;
+	PlanarMetric(PlanarMetric const&) = default;
 
 	/**
 	 * @brief Constructor
