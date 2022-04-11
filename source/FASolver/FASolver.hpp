@@ -186,10 +186,20 @@ void FASolver<CoordinateType, AreaType, UnitType>::optimise(long double const al
 	// !!!!! TODO: Logger assertions !!!!!
 	logger.info("Log started.");
 
-	IloModel cplex_model(this->cplex_environment);
-
 	uint64_t const point_count = this->facility_layout.points.size();
 	uint64_t const type_count = this->type_names.size();
+
+	// Find feasible solution with the help of heuristic
+	logger.info("Execution of Simple Monte-Carlo heuristic started...");
+	FacilityArrangement<CoordinateType, AreaType, UnitType> const feasible_solution = fa::produceMC(
+		this->facility_layout,
+		this->types,
+		this->total_flows,
+		logger,
+		0,
+		(uint64_t)std::sqrt(point_count) * type_count * type_count
+	);
+	logger.info("Execution of heuristic finished.");
 
 	// Variables
 	// 1. Flows
@@ -219,7 +229,7 @@ void FASolver<CoordinateType, AreaType, UnitType>::optimise(long double const al
 
 	// Initialisation of variables, `cplex_total_flow_cost` and constraints
 	auto const initialisation_start_time = std::chrono::high_resolution_clock::now();
-	logger.info("Initialisation of model (variables and constraints) has started...");
+	logger.info("Initialisation of variables and constraints started...");
 	for (auto const& type : this->type_names)
 		for (auto const& [point_name, point] : this->facility_layout.points)
 		{
@@ -233,13 +243,12 @@ void FASolver<CoordinateType, AreaType, UnitType>::optimise(long double const al
 		cplex_x_subject_count.emplace(type1, IloIntVarArray(this->cplex_environment, point_count, 0, IloIntMax));
 		cplex_x_subject_count[type1].setNames(("n_" + type1).data());
 		
-		for (uint64_t point1_i = 0; point1_i < point_count; ++point1_i)
+		uint64_t point1_i = 0;
+		for (auto const& [point_name1, point1] : this->facility_layout.points)
 		{
-			auto const& [point_name1, point1] = *std::next(this->facility_layout.points.begin(), point1_i);
-			
 			cplex_constr_occupied_area.try_emplace(point_name1, IloIntExpr(this->cplex_environment, 0));
 				
-			cplex_constr_occupied_area[point_name1] += (CplexAreaType)this->types.at(type1).area * cplex_x_subject_count[type1][point1_i];
+			cplex_constr_occupied_area[point_name1] += (CplexAreaType)this->types.at(type1).area * cplex_x_subject_count[type1][point1_i++];
 
 			for (auto const& type2 : this->type_names)
 				if (this->total_flows.at(type1).at(type2) != 0)
@@ -260,10 +269,11 @@ void FASolver<CoordinateType, AreaType, UnitType>::optimise(long double const al
 	}
 	auto const initialisation_runtime = std::chrono::high_resolution_clock::now() - initialisation_start_time;
 	auto const initialisation_runtime_hms = std::chrono::hh_mm_ss(initialisation_runtime);
-	logger.info("Initialisation of model has finished.");
+	logger.info("Initialisation of variables and constraints finished.");
 
 	// Add constraints
-	logger.info("Model preparation has started...");
+	logger.info("Model preparation started...");
+	IloModel cplex_model(this->cplex_environment);
 	{
 		uint64_t type1_i = 0;
 		for (auto const& type1 : this->type_names)
@@ -334,28 +344,28 @@ void FASolver<CoordinateType, AreaType, UnitType>::optimise(long double const al
 	cplex.setOut(logger.getInfoCallback());
 	cplex.setWarning(logger.getWarningCallback());
 	cplex.setError(logger.getErrorCallback());
-	logger.info("CPLEX output starts now");
+	logger.info("CPLEX output starts now.");
 	logger.info("========================= CPLEX OUTPUT START =========================");
 	auto const computation_start_time = std::chrono::high_resolution_clock::now();
 	cplex.solve();
 	auto const computation_runtime = std::chrono::high_resolution_clock::now() - computation_start_time;
 	auto const computation_runtime_hms = std::chrono::hh_mm_ss(computation_runtime);
 	logger.info("========================= CPLEX OUTPUT  END  =========================");
-	logger.info("CPLEX has halted, its output has been finished.");
+	logger.info("CPLEX halted, its output finished.");
 
 	// Print the time
 	auto const total_runtime_hms = std::chrono::hh_mm_ss(initialisation_runtime + computation_runtime);
 	logger.info("\nTime statistics");
-	logger.info("\tTime spent on model intialisation = "
+	logger.info("\tTime spent on intialisation = "
 		+ std::to_string(initialisation_runtime_hms.hours().count()) + " h. "
 		+ std::to_string(initialisation_runtime_hms.minutes().count()) + " m. "
 		+ std::to_string(initialisation_runtime_hms.seconds().count()) + " s.");
-	logger.info("\t        Time spent on computation = "
+	logger.info("\t  Time spent on computation = "
 		+ std::to_string(computation_runtime_hms.hours().count()) + " h. "
 		+ std::to_string(computation_runtime_hms.minutes().count()) + " m. "
 		+ std::to_string(computation_runtime_hms.seconds().count()) + " s.");
-	logger.info("\t                                    ------------------------------");
-	logger.info("\t                            TOTAL = "
+	logger.info("\t                              --------------------------------");
+	logger.info("\t                      TOTAL = "
 		+ std::to_string(total_runtime_hms.hours().count()) + " h. "
 		+ std::to_string(total_runtime_hms.minutes().count()) + " m. "
 		+ std::to_string(total_runtime_hms.seconds().count()) + " s.");

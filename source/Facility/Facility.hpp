@@ -15,6 +15,7 @@
 #include <ilcplex/ilocplex.h>
 #include <thread>
 #include <mutex>
+#include <future>
 #include <random>
 
 
@@ -117,6 +118,22 @@ namespace fa::util
 
 
 /**
+ * @class ThreadReturn
+ * @brief Structure returned by each generating thread
+ */
+template<typename CoordinateType, typename AreaType, typename UnitType>
+	requires numeric<CoordinateType> && numeric<AreaType> && numeric<UnitType>
+struct ThreadReturn
+{
+	FacilityArrangement<CoordinateType, AreaType, UnitType> facility_arrangement;
+	long double objective_value;
+};
+
+
+
+
+
+/**
  * @brief Generate a portion of Monte-Carlo samples
  *
  * Used by fa::produceMC to be run by a single thread to generate some part of
@@ -128,16 +145,24 @@ namespace fa::util
  * @param total_flows A map of maps containing pairs of a kind `<i : <j : f>>`
  *                    where \c f is the total flow from all subjects of type
  *                    \c i into all subjects of type \c j.
+ * @param return_value An object to store the return value of the thread.
+ * @param logger A logger.
+ * @param logger_mutex A mutex shared by all the threads to prevent multiple threads
+ *                     writing to the logger simultaneously.
+ * @param thread_id An ID to distinguish this thread.
  * @param workload Number of samples for a thread to generate.
  * @param seed A seed to use for a pseudorandom number generator.
+ * @param max_attempts Maximum number of attempts to make to generate one facility
+ *                     arrangement.
  * 
- * @returns Nothing. Return value is handed back to the main thread via \c promise.
+ * @returns Nothing. Return value is handed back to the main thread via \c return_value.
  */
 template<typename CoordinateType, typename AreaType, typename UnitType>
 	requires numeric<CoordinateType> && numeric<AreaType> && numeric<UnitType>
 void threadMC(FacilityLayout<CoordinateType, AreaType> const& facility_layout,
               SubjectTypeMap<AreaType, UnitType> const&       types,
               FlowMap<UnitType> const&                        total_flows,
+              std::promise<ThreadReturn<CoordinateType, AreaType, UnitType>> return_value,
               Logger const& logger,
               std::mutex&   logger_mutex,
               uint16_t const thread_id,
@@ -308,7 +333,15 @@ void threadMC(FacilityLayout<CoordinateType, AreaType> const& facility_layout,
 			if (cplex.getObjValue() < best_objective_value)
 			{
 				answer = current;
-				// ...
+				for (auto& [point1_name, point1] : answer.points)
+					for (auto const& [type1_name, type1_subject_count] : point1.subject_count)
+					{
+						point1.generated_unit_count[type1_name] = cplex.getValue(cplex_x_generated[type1_name][point1_name]);
+						for (auto const& [point2_name, point2] : answer.points)
+							for (auto const& [type2_name, type2_subject_count] : point2.subject_count)
+								if (total_flows.at(type1_name).at(type2_name) != 0)
+									point1.out_flows[{type1_name, type2_name}][point2_name] = cplex.getValue(cplex_x_flow[{type1_name, type2_name}][{point1_name, point2_name}]);
+					}
 				best_objective_value = cplex.getObjValue();
 			}
 
@@ -331,6 +364,10 @@ void threadMC(FacilityLayout<CoordinateType, AreaType> const& facility_layout,
 			logger_lock.unlock();
 		}
 	}
+
+	return_value.set_value({answer, best_objective_value});
+
+	return;
 }
 
 
@@ -401,23 +438,29 @@ FacilityArrangement<CoordinateType, AreaType, UnitType> const produceMC(Facility
 	}
 
 	FacilityArrangement<CoordinateType, AreaType, UnitType> answer;
+	long double best_objective_value = std::numeric_limits<long double>::infinity();
 
 	// Start threads and wait for them to finish computations
 	logger.info("Starting feasible arrangement search in " + std::to_string(thread_count) + " threads.");
-	logger.info("\tEach thread will generate " + std::to_string(workload) + " samples.");
-	logger.info("\tEach sample will take at most " + std::to_string(max_attempts) + " attempts to generate.");
+	logger.info("Each thread will generate " + std::to_string(workload) + " samples.");
+	logger.info("Each sample will take at most " + std::to_string(max_attempts) + " attempts to generate.");
 	std::vector<std::thread> threads;
+	std::vector<std::future<util::ThreadReturn<CoordinateType, AreaType, UnitType>>> futures;
 	std::mutex logger_mutex;
 	std::seed_seq seed_sequence{9299U, 2020U, 2022U, 218U};
 	std::vector<uint32_t> seeds(thread_count);
 	seed_sequence.generate(seeds.begin(), seeds.end());
 	for (uint16_t thread_i = 0; thread_i < thread_count; ++thread_i)
+	{
+		std::promise<util::ThreadReturn<CoordinateType, AreaType, UnitType>> promise;
+		futures.push_back(promise.get_future());
 		threads.push_back(std::thread
 		(
 			util::threadMC<CoordinateType, AreaType, UnitType>,
 			std::cref(facility_layout),
 			std::cref(types),
 			std::cref(total_flows),
+			std::move(promise),
 			std::cref(logger),
 			std::ref(logger_mutex),
 			thread_i,
@@ -425,8 +468,18 @@ FacilityArrangement<CoordinateType, AreaType, UnitType> const produceMC(Facility
 			seeds[thread_i],
 			max_attempts
 		));
-	for (auto& thread : threads)
-		thread.join();
+	}
+	for (uint16_t thread_i = 0; thread_i < thread_count; ++thread_i)
+	{
+		util::ThreadReturn<CoordinateType, AreaType, UnitType> thread_return(futures[thread_i].get());
+		if (thread_return.objective_value < best_objective_value)
+		{
+			answer = thread_return.facility_arrangement;
+			best_objective_value = thread_return.objective_value;
+		}
+		threads[thread_i].join();
+	}
+	logger.info("A facility arrangement was found with the total flow cost of " + std::to_string(best_objective_value));
 	
 	return answer;
 }

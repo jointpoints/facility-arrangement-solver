@@ -36,7 +36,7 @@ using FlowMap = std::map<std::string, UnitMap<UnitType>>;
 
 template<typename UnitType>
 	requires numeric<UnitType>
-using FacilityArrangementFlowMap = std::map<std::string, FlowMap<UnitType>>;
+using FacilityArrangementFlowMap = std::map<std::pair<std::string, std::string>, std::map<std::string, UnitType>>;
 
 
 
@@ -88,6 +88,7 @@ struct FacilityArrangementPoint final
 {
 	AreaType                             remaining_capacity;
 	UnitMap<uint64_t>                    subject_count;
+	UnitMap<UnitType>                    generated_unit_count;
 	FacilityArrangementFlowMap<UnitType> out_flows;
 
 
@@ -131,6 +132,7 @@ template<typename CoordinateType, typename AreaType, typename UnitType>
 FacilityArrangementPoint<CoordinateType, AreaType, UnitType>::FacilityArrangementPoint(Point<CoordinateType, AreaType> const& point)
 	: remaining_capacity(point.capacity)
 	, subject_count()
+	, generated_unit_count()
 	, out_flows()
 {
 	this->x = point.x;
@@ -153,6 +155,7 @@ bool const FacilityArrangementPoint<CoordinateType, AreaType, UnitType>::addSubj
 		++this->subject_count[type_name];
 	else
 		this->subject_count[type_name] = 1;
+	this->remaining_capacity -= area;
 	return true;
 }
 
