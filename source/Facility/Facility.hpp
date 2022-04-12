@@ -17,6 +17,7 @@
 #include <mutex>
 #include <future>
 #include <random>
+#include <iostream> // !!!!! DEBUG !!!!!
 
 
 
@@ -198,7 +199,7 @@ void threadMC(FacilityLayout<CoordinateType, AreaType> const& facility_layout,
 					selected_point_name = std::string(point_it->first);
 					selected_point = point_it->second;
 				}
-				if (attempt_i == max_attempts)
+				if (attempt_i > max_attempts)
 					goto skip_sample;
 			}
 		}
@@ -307,8 +308,8 @@ void threadMC(FacilityLayout<CoordinateType, AreaType> const& facility_layout,
 				// (6)
 				IloIntExpr accumulated_sum(cplex_environment, 0);
 				for (auto const& [point_name, point] : current.points)
-						if (point.subject_count.contains(type1_name))
-							accumulated_sum += cplex_x_generated[type1_name][point_name];
+					if (point.subject_count.contains(type1_name))
+						accumulated_sum += cplex_x_generated[type1_name][point_name];
 				cplex_model.add
 				(
 					accumulated_sum == (IloInt)types.at(type1_name).total_generated_units
@@ -336,7 +337,10 @@ void threadMC(FacilityLayout<CoordinateType, AreaType> const& facility_layout,
 				for (auto& [point1_name, point1] : answer.points)
 					for (auto const& [type1_name, type1_subject_count] : point1.subject_count)
 					{
-						point1.generated_unit_count[type1_name] = cplex.getValue(cplex_x_generated[type1_name][point1_name]);
+						if (point1.generated_unit_count.contains(type1_name))
+							point1.generated_unit_count[type1_name] += cplex.getValue(cplex_x_generated[type1_name][point1_name]);
+						else
+							point1.generated_unit_count[type1_name] = cplex.getValue(cplex_x_generated[type1_name][point1_name]);
 						for (auto const& [point2_name, point2] : answer.points)
 							for (auto const& [type2_name, type2_subject_count] : point2.subject_count)
 								if (total_flows.at(type1_name).at(type2_name) != 0)
@@ -447,7 +451,7 @@ FacilityArrangement<CoordinateType, AreaType, UnitType> const produceMC(Facility
 	std::vector<std::thread> threads;
 	std::vector<std::future<util::ThreadReturn<CoordinateType, AreaType, UnitType>>> futures;
 	std::mutex logger_mutex;
-	std::seed_seq seed_sequence{9299U, 2020U, 2022U, 218U};
+	std::seed_seq seed_sequence{9299U, 4521U, 2022U, 218U};
 	std::vector<uint32_t> seeds(thread_count);
 	seed_sequence.generate(seeds.begin(), seeds.end());
 	for (uint16_t thread_i = 0; thread_i < thread_count; ++thread_i)
@@ -480,6 +484,14 @@ FacilityArrangement<CoordinateType, AreaType, UnitType> const produceMC(Facility
 		threads[thread_i].join();
 	}
 	logger.info("A facility arrangement was found with the total flow cost of " + std::to_string(best_objective_value));
+
+	for (auto const& [type_name, type] : types)
+	{
+		uint64_t accumulated_sum = 0;
+		for (auto const& [point_name, point] : answer.points)
+			accumulated_sum += point.subject_count.contains(type_name) ? point.subject_count.at(type_name) : 0;
+		std::cout << type_name << ' ' << accumulated_sum << '\n';
+	}
 	
 	return answer;
 }

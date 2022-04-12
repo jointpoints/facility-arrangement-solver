@@ -237,7 +237,7 @@ void Logger::LoggerCore::info(std::string const message) const
 	if ((std::string(begin, end) != "\n") && (std::string(begin, end) != ""))
 		lines.emplace_back(begin, end);
 	for (auto const& line : lines)
-		this->output_stream << (timestamp() + " INFO    | " + line + "\n").data();
+		this->output_stream << (timestamp() + " INFO    | " + line + "\n").data() << std::flush;
 	return;
 }
 void Logger::LoggerCore::warning(std::string const message) const
@@ -258,7 +258,7 @@ void Logger::LoggerCore::warning(std::string const message) const
 	if ((std::string(begin, end) != "\n") && (std::string(begin, end) != ""))
 		lines.emplace_back(begin, end);
 	for (auto const& line : lines)
-		this->output_stream << (timestamp() + " WARNING | " + line + "\n").data();
+		this->output_stream << (timestamp() + " WARNING | " + line + "\n").data() << std::flush;
 	return;
 }
 void Logger::LoggerCore::error(std::string const message) const
@@ -279,6 +279,6 @@ void Logger::LoggerCore::error(std::string const message) const
 	if ((std::string(begin, end) != "\n") && (std::string(begin, end) != ""))
 		lines.emplace_back(begin, end);
 	for (auto const& line : lines)
-		this->output_stream << (timestamp() + " ERROR   | " + line + "\n").data();
+		this->output_stream << (timestamp() + " ERROR   | " + line + "\n").data() << std::flush;
 	return;
 }

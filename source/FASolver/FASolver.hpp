@@ -189,18 +189,6 @@ void FASolver<CoordinateType, AreaType, UnitType>::optimise(long double const al
 	uint64_t const point_count = this->facility_layout.points.size();
 	uint64_t const type_count = this->type_names.size();
 
-	// Find feasible solution with the help of heuristic
-	logger.info("Execution of Simple Monte-Carlo heuristic started...");
-	FacilityArrangement<CoordinateType, AreaType, UnitType> const feasible_solution = fa::produceMC(
-		this->facility_layout,
-		this->types,
-		this->total_flows,
-		logger,
-		0,
-		(uint64_t)std::sqrt(point_count) * type_count * type_count
-	);
-	logger.info("Execution of heuristic finished.");
-
 	// Variables
 	// 1. Flows
 	std::map<std::pair<std::string, std::string>, std::map<std::pair<std::string, std::string>, IloIntVar>> cplex_x_flow;
@@ -216,9 +204,9 @@ void FASolver<CoordinateType, AreaType, UnitType>::optimise(long double const al
 	IloNumExpr cplex_total_flow_cost(this->cplex_environment, 0.0);
 
 	// Constraint (1): input does not exceed the input capacity (iterated over all types and then over all points)
-	std::map<std::pair<std::string, std::string>, IloIntExpr> cplex_constr_in_flow;
+	std::map<std::string, std::map<std::string, IloIntExpr>> cplex_constr_in_flow;
 	// Constraint (2): output does not exceed the output capacity (iterated over all types and then over all points)
-	std::map<std::pair<std::string, std::string>, IloIntExpr> cplex_constr_out_flow;
+	std::map<std::string, std::map<std::string, IloIntExpr>> cplex_constr_out_flow;
 	// Constraint (3): the area occupied by the subjects in one place/point does not exceed its area capacity (iterated over all points)
 	std::map<std::string, IloIntExpr> cplex_constr_occupied_area;
 	// Constraint (4): weak Kirchhoff condition
@@ -230,12 +218,16 @@ void FASolver<CoordinateType, AreaType, UnitType>::optimise(long double const al
 	// Initialisation of variables, `cplex_total_flow_cost` and constraints
 	auto const initialisation_start_time = std::chrono::high_resolution_clock::now();
 	logger.info("Initialisation of variables and constraints started...");
-	for (auto const& type : this->type_names)
+	for (auto const& type_name : this->type_names)
+	{
+		cplex_constr_in_flow[type_name];
+		cplex_constr_out_flow[type_name];
 		for (auto const& [point_name, point] : this->facility_layout.points)
 		{
-			cplex_constr_in_flow.emplace(std::make_pair(type, point_name), IloIntExpr(this->cplex_environment, 0));
-			cplex_constr_out_flow.emplace(std::make_pair(type, point_name), IloIntExpr(this->cplex_environment, 0));
+			cplex_constr_in_flow[type_name].emplace(point_name, IloIntExpr(this->cplex_environment, 0));
+			cplex_constr_out_flow[type_name].emplace(point_name, IloIntExpr(this->cplex_environment, 0));
 		}
+	}
 	for (auto const& type1 : this->type_names)
 	{
 		cplex_x_generated.emplace(type1, IloIntVarArray(this->cplex_environment, point_count, 0, IloIntMax));
@@ -261,8 +253,8 @@ void FASolver<CoordinateType, AreaType, UnitType>::optimise(long double const al
 						
 						cplex_total_flow_cost += (IloNum)this->facility_layout.distance(point1, point2) * cplex_x_flow[{type1, type2}][{point_name1, point_name2}];
 						
-						cplex_constr_in_flow[{type2, point_name2}] += cplex_x_flow[{type1, type2}][{point_name1, point_name2}];
-						cplex_constr_out_flow[{type1, point_name1}] += cplex_x_flow[{type1, type2}][{point_name1, point_name2}];
+						cplex_constr_in_flow[type2][point_name2] += cplex_x_flow[{type1, type2}][{point_name1, point_name2}];
+						cplex_constr_out_flow[type1][point_name1] += cplex_x_flow[{type1, type2}][{point_name1, point_name2}];
 					}
 				}
 		}
@@ -271,12 +263,27 @@ void FASolver<CoordinateType, AreaType, UnitType>::optimise(long double const al
 	auto const initialisation_runtime_hms = std::chrono::hh_mm_ss(initialisation_runtime);
 	logger.info("Initialisation of variables and constraints finished.");
 
-	// Add constraints
+	// Find feasible solution with the help of heuristic
+	logger.info("Execution of Simple Monte-Carlo heuristic started...");
+	FacilityArrangement<CoordinateType, AreaType, UnitType> const feasible_solution = fa::produceMC(
+		this->facility_layout,
+		this->types,
+		this->total_flows,
+		logger,
+		0,
+		(uint64_t)std::sqrt(point_count) * type_count * type_count
+	);
+	logger.info("Execution of heuristic finished.");
+	
+	IloNumVarArray cplex_xs_aggregator(this->cplex_environment);
+	IloNumArray cplex_feasxs_aggregator(this->cplex_environment);
+
+	// Add constraints and translate the feasible solution into the language of CPLEX
 	logger.info("Model preparation started...");
 	IloModel cplex_model(this->cplex_environment);
 	{
 		uint64_t type1_i = 0;
-		for (auto const& type1 : this->type_names)
+		for (auto const& type1_name : this->type_names)
 		{
 			uint64_t point_i = 0;
 			for (auto const& [point_name, point] : this->facility_layout.points)
@@ -284,42 +291,56 @@ void FASolver<CoordinateType, AreaType, UnitType>::optimise(long double const al
 				// (1)
 				cplex_model.add
 				(
-					cplex_constr_in_flow[{type1, point_name}] <= cplex_x_subject_count[type1][point_i] * (CplexUnitType)this->types.at(type1).in_capacity
+					cplex_constr_in_flow[type1_name][point_name] <= cplex_x_subject_count[type1_name][point_i] * (CplexUnitType)this->types.at(type1_name).in_capacity
 				);
 				// (2)
 				cplex_model.add
 				(
-					cplex_constr_out_flow[{type1, point_name}] <= cplex_x_subject_count[type1][point_i] * (CplexUnitType)this->types.at(type1).out_capacity
+					cplex_constr_out_flow[type1_name][point_name] <= cplex_x_subject_count[type1_name][point_i] * (CplexUnitType)this->types.at(type1_name).out_capacity
 				);
 				// (4)
 				cplex_model.add
 				(
-					cplex_constr_out_flow[{type1, point_name}] <= cplex_x_generated[type1][point_i] + cplex_constr_in_flow[{type1, point_name}]
+					cplex_constr_out_flow[type1_name][point_name] <= cplex_x_generated[type1_name][point_i] + cplex_constr_in_flow[type1_name][point_name]
 				);
+				// Translate subject count and generated units count
+				cplex_xs_aggregator.add(cplex_x_subject_count[type1_name][point_i]);
+				cplex_xs_aggregator.add(cplex_x_generated[type1_name][point_i]);
+				cplex_feasxs_aggregator.add(feasible_solution.points.at(point_name).subject_count.contains(type1_name) ? feasible_solution.points.at(point_name).subject_count.at(type1_name) : 0);
+				cplex_feasxs_aggregator.add(feasible_solution.points.at(point_name).generated_unit_count.contains(type1_name) ? feasible_solution.points.at(point_name).generated_unit_count.at(type1_name) : 0);
+				cplex_model.add(cplex_x_subject_count[type1_name][point_i] == (feasible_solution.points.at(point_name).subject_count.contains(type1_name) ? feasible_solution.points.at(point_name).subject_count.at(type1_name) : 0));
+				cplex_model.add(cplex_x_generated[type1_name][point_i] == (feasible_solution.points.at(point_name).generated_unit_count.contains(type1_name) ? feasible_solution.points.at(point_name).generated_unit_count.at(type1_name) : 0));
 				++point_i;
 			}
-			for (auto const& type2 : this->type_names)
-				if (this->total_flows.at(type1).at(type2) != 0)
+			for (auto const& type2_name : this->type_names)
+				if (this->total_flows.at(type1_name).at(type2_name) != 0)
 				{
 					IloIntExpr accumulated_sum(this->cplex_environment, 0);
-					for (auto const& [point_name1, point1] : this->facility_layout.points)
-						for (auto const& [point_name2, point2] : this->facility_layout.points)
-							accumulated_sum += cplex_x_flow[{type1, type2}][{point_name1, point_name2}];
+					for (auto const& [point1_name, point1] : this->facility_layout.points)
+					{
+						for (auto const& [point2_name, point2] : this->facility_layout.points)
+						{
+							accumulated_sum += cplex_x_flow[{type1_name, type2_name}][{point1_name, point2_name}];
+							cplex_xs_aggregator.add(cplex_x_flow[{type1_name, type2_name}][{point1_name, point2_name}]);
+							cplex_feasxs_aggregator.add((feasible_solution.points.at(point1_name).out_flows.contains({type1_name, type2_name}) && feasible_solution.points.at(point1_name).out_flows.at({type1_name, type2_name}).contains(point2_name)) ? feasible_solution.points.at(point1_name).out_flows.at({type1_name, type2_name}).at(point2_name) : 0);
+							cplex_model.add(cplex_x_flow[{type1_name, type2_name}][{point1_name, point2_name}] == ((feasible_solution.points.at(point1_name).out_flows.contains({type1_name, type2_name}) && feasible_solution.points.at(point1_name).out_flows.at({type1_name, type2_name}).contains(point2_name)) ? feasible_solution.points.at(point1_name).out_flows.at({type1_name, type2_name}).at(point2_name) : 0));
+						}
+					}
 					// (5)
 					cplex_model.add
 					(
-						accumulated_sum == (IloNum)(this->total_flows.at(type1).at(type2))
+						accumulated_sum == (IloNum)(this->total_flows.at(type1_name).at(type2_name))
 					);
 				}
 			// (6)
 			cplex_model.add
 			(
-				IloSum(cplex_x_generated[type1]) == (CplexUnitType)this->types.at(type1).total_generated_units
+				IloSum(cplex_x_generated[type1_name]) == (CplexUnitType)this->types.at(type1_name).total_generated_units
 			);
 			// (7)
 			cplex_model.add
 			(
-				IloSum(cplex_x_subject_count[type1]) == (IloInt)this->types.at(type1).initially_available + cplex_x_additional_subjects[type1_i]
+				IloSum(cplex_x_subject_count[type1_name]) == (IloInt)this->types.at(type1_name).initially_available + cplex_x_additional_subjects[type1_i]
 			);
 			++type1_i;
 		}
@@ -347,6 +368,7 @@ void FASolver<CoordinateType, AreaType, UnitType>::optimise(long double const al
 	logger.info("CPLEX output starts now.");
 	logger.info("========================= CPLEX OUTPUT START =========================");
 	auto const computation_start_time = std::chrono::high_resolution_clock::now();
+	cplex.addMIPStart(cplex_xs_aggregator, cplex_feasxs_aggregator, IloCplex::MIPStartEffort::MIPStartCheckFeas);
 	cplex.solve();
 	auto const computation_runtime = std::chrono::high_resolution_clock::now() - computation_start_time;
 	auto const computation_runtime_hms = std::chrono::hh_mm_ss(computation_runtime);
@@ -370,6 +392,8 @@ void FASolver<CoordinateType, AreaType, UnitType>::optimise(long double const al
 		+ std::to_string(total_runtime_hms.minutes().count()) + " m. "
 		+ std::to_string(total_runtime_hms.seconds().count()) + " s.");
 	logger.info("\nLog finished.");
+
+	cplex.exportModel("test.lp");
 
 	return;
 }
