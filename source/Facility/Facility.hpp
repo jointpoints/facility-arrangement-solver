@@ -17,7 +17,6 @@
 #include <mutex>
 #include <future>
 #include <random>
-#include <iostream> // !!!!! DEBUG !!!!!
 
 
 
@@ -190,16 +189,10 @@ void threadMC(FacilityLayout<CoordinateType, AreaType> const& facility_layout,
 			{
 				// Try to place a subject of type `type_name` somewhere in the facility
 				auto point_it = std::next(current.points.begin(), distribution_points(prng));
-				auto selected_point_name = std::string(point_it->first);
-				auto& selected_point = point_it->second;
 				uint64_t attempt_i = 0;
-				while ((!selected_point.addSubject(type_name, type.area)) && (attempt_i++ < max_attempts))
-				{
+				for (; (attempt_i < max_attempts) && (!point_it->second.addSubject(type_name, type.area)); ++attempt_i)
 					point_it = std::next(current.points.begin(), distribution_points(prng));
-					selected_point_name = std::string(point_it->first);
-					selected_point = point_it->second;
-				}
-				if (attempt_i > max_attempts)
+				if (attempt_i >= max_attempts)
 					goto skip_sample;
 			}
 		}
@@ -232,8 +225,6 @@ void threadMC(FacilityLayout<CoordinateType, AreaType> const& facility_layout,
 			//     (omitted)
 
 			// Initialisation of variables, `cplex_total_flow_cost` and constraints
-			//auto const initialisation_start_time = std::chrono::high_resolution_clock::now();
-			//logger.info("Initialisation of model (variables and constraints) has started...");
 			for (auto const& [type_name, type] : types)
 				for (auto const& [point_name, point] : current.points)
 				{
@@ -263,9 +254,6 @@ void threadMC(FacilityLayout<CoordinateType, AreaType> const& facility_layout,
 										cplex_constr_out_flow[{type1_name, point1_name}] += cplex_x_flow[{type1_name, type2_name}][{point1_name, point2_name}];
 									}
 							}
-			//auto const initialisation_runtime = std::chrono::high_resolution_clock::now() - initialisation_start_time;
-			//auto const initialisation_runtime_hms = std::chrono::hh_mm_ss(initialisation_runtime);
-			//logger.info("Initialisation of model has finished.");
 
 			// Add constraints
 			for (auto const& [type1_name, type1] : types)
@@ -484,14 +472,6 @@ FacilityArrangement<CoordinateType, AreaType, UnitType> const produceMC(Facility
 		threads[thread_i].join();
 	}
 	logger.info("A facility arrangement was found with the total flow cost of " + std::to_string(best_objective_value));
-
-	for (auto const& [type_name, type] : types)
-	{
-		uint64_t accumulated_sum = 0;
-		for (auto const& [point_name, point] : answer.points)
-			accumulated_sum += point.subject_count.contains(type_name) ? point.subject_count.at(type_name) : 0;
-		std::cout << type_name << ' ' << accumulated_sum << '\n';
-	}
 	
 	return answer;
 }

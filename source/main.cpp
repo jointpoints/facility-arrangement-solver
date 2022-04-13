@@ -4,7 +4,6 @@
  */
 #include "FASolver/FASolver.hpp"
 #include "PlanarMetric/PlanarMetric.hpp"
-#include <iostream>
 
 
 

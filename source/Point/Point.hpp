@@ -95,6 +95,8 @@ struct FacilityArrangementPoint final
 
 	FacilityArrangementPoint(void) = default;
 
+	FacilityArrangementPoint(FacilityArrangementPoint<CoordinateType, AreaType, UnitType> const&) = default;
+
 	FacilityArrangementPoint(Point<CoordinateType, AreaType> const& point);
 
 	bool const addSubject(std::string const type_name, AreaType const area);

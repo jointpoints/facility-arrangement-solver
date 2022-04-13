@@ -308,8 +308,6 @@ void FASolver<CoordinateType, AreaType, UnitType>::optimise(long double const al
 				cplex_xs_aggregator.add(cplex_x_generated[type1_name][point_i]);
 				cplex_feasxs_aggregator.add(feasible_solution.points.at(point_name).subject_count.contains(type1_name) ? feasible_solution.points.at(point_name).subject_count.at(type1_name) : 0);
 				cplex_feasxs_aggregator.add(feasible_solution.points.at(point_name).generated_unit_count.contains(type1_name) ? feasible_solution.points.at(point_name).generated_unit_count.at(type1_name) : 0);
-				cplex_model.add(cplex_x_subject_count[type1_name][point_i] == (feasible_solution.points.at(point_name).subject_count.contains(type1_name) ? feasible_solution.points.at(point_name).subject_count.at(type1_name) : 0));
-				cplex_model.add(cplex_x_generated[type1_name][point_i] == (feasible_solution.points.at(point_name).generated_unit_count.contains(type1_name) ? feasible_solution.points.at(point_name).generated_unit_count.at(type1_name) : 0));
 				++point_i;
 			}
 			for (auto const& type2_name : this->type_names)
@@ -323,7 +321,6 @@ void FASolver<CoordinateType, AreaType, UnitType>::optimise(long double const al
 							accumulated_sum += cplex_x_flow[{type1_name, type2_name}][{point1_name, point2_name}];
 							cplex_xs_aggregator.add(cplex_x_flow[{type1_name, type2_name}][{point1_name, point2_name}]);
 							cplex_feasxs_aggregator.add((feasible_solution.points.at(point1_name).out_flows.contains({type1_name, type2_name}) && feasible_solution.points.at(point1_name).out_flows.at({type1_name, type2_name}).contains(point2_name)) ? feasible_solution.points.at(point1_name).out_flows.at({type1_name, type2_name}).at(point2_name) : 0);
-							cplex_model.add(cplex_x_flow[{type1_name, type2_name}][{point1_name, point2_name}] == ((feasible_solution.points.at(point1_name).out_flows.contains({type1_name, type2_name}) && feasible_solution.points.at(point1_name).out_flows.at({type1_name, type2_name}).contains(point2_name)) ? feasible_solution.points.at(point1_name).out_flows.at({type1_name, type2_name}).at(point2_name) : 0));
 						}
 					}
 					// (5)
@@ -392,8 +389,6 @@ void FASolver<CoordinateType, AreaType, UnitType>::optimise(long double const al
 		+ std::to_string(total_runtime_hms.minutes().count()) + " m. "
 		+ std::to_string(total_runtime_hms.seconds().count()) + " s.");
 	logger.info("\nLog finished.");
-
-	cplex.exportModel("test.lp");
 
 	return;
 }
