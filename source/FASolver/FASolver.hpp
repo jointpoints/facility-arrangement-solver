@@ -192,8 +192,8 @@ void FASolver<CoordinateType, AreaType, UnitType>::optimise(long double const al
 	// Variables
 	// 1. Flows
 	std::map<std::pair<std::string, std::string>, std::map<std::pair<std::string, std::string>, IloIntVar>> cplex_x_flow;
-	// 2. Generated units
-	std::map<std::string, IloIntVarArray> cplex_x_generated;
+	// 2. Produced units
+	std::map<std::string, IloIntVarArray> cplex_x_produced;
 	// 3. Number of subjects in each point
 	std::map<std::string, IloIntVarArray> cplex_x_subject_count;
 	// 4. Additional subjects to buy
@@ -219,44 +219,36 @@ void FASolver<CoordinateType, AreaType, UnitType>::optimise(long double const al
 	auto const initialisation_start_time = std::chrono::high_resolution_clock::now();
 	logger.info("Initialisation of variables and constraints started...");
 	for (auto const& type_name : this->type_names)
-	{
-		cplex_constr_in_flow[type_name];
-		cplex_constr_out_flow[type_name];
 		for (auto const& [point_name, point] : this->facility_layout.points)
 		{
-			cplex_constr_in_flow[type_name].emplace(point_name, IloIntExpr(this->cplex_environment, 0));
-			cplex_constr_out_flow[type_name].emplace(point_name, IloIntExpr(this->cplex_environment, 0));
+			cplex_constr_in_flow[type_name][point_name] = IloIntExpr(this->cplex_environment, 0);
+			cplex_constr_out_flow[type_name][point_name] = IloIntExpr(this->cplex_environment, 0);
 		}
-	}
-	for (auto const& type1 : this->type_names)
+	for (auto const& type1_name : this->type_names)
 	{
-		cplex_x_generated.emplace(type1, IloIntVarArray(this->cplex_environment, point_count, 0, IloIntMax));
-		cplex_x_generated[type1].setNames(("g_" + type1).data());
-		cplex_x_subject_count.emplace(type1, IloIntVarArray(this->cplex_environment, point_count, 0, IloIntMax));
-		cplex_x_subject_count[type1].setNames(("n_" + type1).data());
+		cplex_x_produced[type1_name] = IloIntVarArray(this->cplex_environment, point_count, 0, IloIntMax);
+		cplex_x_produced[type1_name].setNames(("g_" + type1_name).data());
+		cplex_x_subject_count[type1_name] = IloIntVarArray(this->cplex_environment, point_count, 0, IloIntMax);
+		cplex_x_subject_count[type1_name].setNames(("n_" + type1_name).data());
 		
 		uint64_t point1_i = 0;
-		for (auto const& [point_name1, point1] : this->facility_layout.points)
+		for (auto const& [point1_name, point1] : this->facility_layout.points)
 		{
-			cplex_constr_occupied_area.try_emplace(point_name1, IloIntExpr(this->cplex_environment, 0));
+			cplex_constr_occupied_area.try_emplace(point1_name, IloIntExpr(this->cplex_environment, 0));
 				
-			cplex_constr_occupied_area[point_name1] += (CplexAreaType)this->types.at(type1).area * cplex_x_subject_count[type1][point1_i++];
+			cplex_constr_occupied_area[point1_name] += (CplexAreaType)this->types.at(type1_name).area * cplex_x_subject_count[type1_name][point1_i++];
 
 			for (auto const& type2 : this->type_names)
-				if (this->total_flows.at(type1).at(type2) != 0)
-				{
-					cplex_x_flow.insert({{type1, type2}, {}});
-					
+				if (this->total_flows.at(type1_name).at(type2) != 0)
 					for (auto const& [point_name2, point2] : this->facility_layout.points)
 					{
-						cplex_x_flow[{type1, type2}].insert({{point_name1, point_name2}, IloIntVar(this->cplex_environment, 0, IloIntMax, ("f_" + type1 + type2 + "_" + point_name1 + "," + point_name2).data())});
+						cplex_x_flow[{type1_name, type2}][{point1_name, point_name2}] = IloIntVar(this->cplex_environment, 0, IloIntMax, ("f_" + type1_name + type2 + "_" + point1_name + "," + point_name2).data());
 						
-						cplex_total_flow_cost += (IloNum)this->facility_layout.distance(point1, point2) * cplex_x_flow[{type1, type2}][{point_name1, point_name2}];
+						cplex_total_flow_cost += (IloNum)this->facility_layout.distance(point1, point2) * cplex_x_flow[{type1_name, type2}][{point1_name, point_name2}];
 						
-						cplex_constr_in_flow[type2][point_name2] += cplex_x_flow[{type1, type2}][{point_name1, point_name2}];
-						cplex_constr_out_flow[type1][point_name1] += cplex_x_flow[{type1, type2}][{point_name1, point_name2}];
+						cplex_constr_in_flow[type2][point_name2] += cplex_x_flow[{type1_name, type2}][{point1_name, point_name2}];
+						cplex_constr_out_flow[type1_name][point1_name] += cplex_x_flow[{type1_name, type2}][{point1_name, point_name2}];
 					}
-				}
 		}
 	}
 	auto const initialisation_runtime = std::chrono::high_resolution_clock::now() - initialisation_start_time;
@@ -301,13 +293,13 @@ void FASolver<CoordinateType, AreaType, UnitType>::optimise(long double const al
 				// (4)
 				cplex_model.add
 				(
-					cplex_constr_out_flow[type1_name][point_name] <= cplex_x_generated[type1_name][point_i] + cplex_constr_in_flow[type1_name][point_name]
+					cplex_constr_out_flow[type1_name][point_name] <= cplex_x_produced[type1_name][point_i] + cplex_constr_in_flow[type1_name][point_name]
 				);
 				// Translate subject count and generated units count
 				cplex_xs_aggregator.add(cplex_x_subject_count[type1_name][point_i]);
-				cplex_xs_aggregator.add(cplex_x_generated[type1_name][point_i]);
+				cplex_xs_aggregator.add(cplex_x_produced[type1_name][point_i]);
 				cplex_feasxs_aggregator.add(feasible_solution.points.at(point_name).subject_count.contains(type1_name) ? feasible_solution.points.at(point_name).subject_count.at(type1_name) : 0);
-				cplex_feasxs_aggregator.add(feasible_solution.points.at(point_name).generated_unit_count.contains(type1_name) ? feasible_solution.points.at(point_name).generated_unit_count.at(type1_name) : 0);
+				cplex_feasxs_aggregator.add(feasible_solution.points.at(point_name).produced_unit_count.contains(type1_name) ? feasible_solution.points.at(point_name).produced_unit_count.at(type1_name) : 0);
 				++point_i;
 			}
 			for (auto const& type2_name : this->type_names)
@@ -332,7 +324,7 @@ void FASolver<CoordinateType, AreaType, UnitType>::optimise(long double const al
 			// (6)
 			cplex_model.add
 			(
-				IloSum(cplex_x_generated[type1_name]) == (CplexUnitType)this->types.at(type1_name).total_generated_units
+				IloSum(cplex_x_produced[type1_name]) == (CplexUnitType)this->types.at(type1_name).production_target
 			);
 			// (7)
 			cplex_model.add

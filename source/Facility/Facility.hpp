@@ -170,7 +170,7 @@ void threadMC(FacilityLayout<CoordinateType, AreaType> const& facility_layout,
               uint64_t const seed,
               uint64_t const max_attempts)
 {
-	FacilityArrangement<CoordinateType, AreaType, UnitType> answer;
+	FacilityArrangement<CoordinateType, AreaType, UnitType> answer(facility_layout);
 	long double best_objective_value = std::numeric_limits<long double>::infinity();
 	std::unique_lock logger_lock(logger_mutex, std::defer_lock);
 
@@ -205,8 +205,7 @@ void threadMC(FacilityLayout<CoordinateType, AreaType> const& facility_layout,
 			// 1. Flows
 			std::map<std::pair<std::string, std::string>, std::map<std::pair<std::string, std::string>, IloIntVar>> cplex_x_flow;
 			// 2. Generated units
-			//std::map<std::string, IloIntVarArray> cplex_x_generated;
-			std::map<std::string, std::map<std::string, IloIntVar>> cplex_x_generated;
+			std::map<std::string, std::map<std::string, IloIntVar>> cplex_x_produced;
 
 			// Total flow cost (one of the terms of the objective function)
 			IloNumExpr cplex_total_flow_cost(cplex_environment, 0.0);
@@ -216,44 +215,38 @@ void threadMC(FacilityLayout<CoordinateType, AreaType> const& facility_layout,
 			// Constraint (2): output does not exceed the output capacity (iterated over all types and then over all points)
 			std::map<std::pair<std::string, std::string>, IloIntExpr> cplex_constr_out_flow;
 			// Constraint (3): the area occupied by the subjects in one place/point does not exceed its area capacity (iterated over all points)
-			//     (omitted)
+			//     (satisfied by construction)
 			// Constraint (4): weak Kirchhoff condition
 			//     reuse `cplex_constr_out_flow` and `cplex_constr_in_flow` for this
 			// Constraint (5): flow from all subjects of type i to all subjects of type j equals the respective total flow
 			// Constraint (6): all generated units by subjects of each type add up to the respective total number of generated units
 			// Constraint (7): all subjects are placed somewhere
-			//     (omitted)
+			//     (satisfied by construction)
 
 			// Initialisation of variables, `cplex_total_flow_cost` and constraints
 			for (auto const& [type_name, type] : types)
 				for (auto const& [point_name, point] : current.points)
-				{
 					if (point.subject_count.contains(type_name))
 					{
-						cplex_constr_in_flow.emplace(std::make_pair(type_name, point_name), IloIntExpr(cplex_environment, 0));
-						cplex_constr_out_flow.emplace(std::make_pair(type_name, point_name), IloIntExpr(cplex_environment, 0));
-						cplex_x_generated[type_name][point_name] = IloIntVar(cplex_environment, 0, IloIntMax, ("g_" + type_name + "_" + point_name).data());
+						cplex_constr_in_flow[{type_name, point_name}] = IloIntExpr(cplex_environment, 0);
+						cplex_constr_out_flow[{type_name, point_name}] = IloIntExpr(cplex_environment, 0);
+						cplex_x_produced[type_name][point_name] = IloIntVar(cplex_environment, 0, IloIntMax, ("g_" + type_name + "_" + point_name).data());
 					}
-				}
 			for (auto const& [type1_name, type1] : types)
-				for (auto const& [point1_name, point1] : current.points)
-					if (point1.subject_count.contains(type1_name))
-						for (auto const& [type2_name, type2] : types)
-							if (total_flows.at(type1_name).at(type2_name) != 0)
-							{
-								cplex_x_flow.insert({{type1_name, type2_name}, {}});
-								
+				for (auto const& [type2_name, type2] : types)
+					if (total_flows.at(type1_name).at(type2_name) != 0)
+						for (auto const& [point1_name, point1] : current.points)
+							if (point1.subject_count.contains(type1_name))
 								for (auto const& [point2_name, point2] : current.points)
 									if (point2.subject_count.contains(type2_name))
 									{
-										cplex_x_flow[{type1_name, type2_name}].insert({{point1_name, point2_name}, IloIntVar(cplex_environment, 0, IloIntMax, ("f_" + type1_name + type2_name + "_" + point1_name + "," + point2_name).data())});
+										cplex_x_flow[{type1_name, type2_name}][{point1_name, point2_name}] = IloIntVar(cplex_environment, 0, IloIntMax, ("f_" + type1_name + type2_name + "_" + point1_name + "," + point2_name).data());
 										
 										cplex_total_flow_cost += (IloNum)current.distance(point1, point2) * cplex_x_flow[{type1_name, type2_name}][{point1_name, point2_name}];
 										
 										cplex_constr_in_flow[{type2_name, point2_name}] += cplex_x_flow[{type1_name, type2_name}][{point1_name, point2_name}];
 										cplex_constr_out_flow[{type1_name, point1_name}] += cplex_x_flow[{type1_name, type2_name}][{point1_name, point2_name}];
 									}
-							}
 
 			// Add constraints
 			for (auto const& [type1_name, type1] : types)
@@ -275,7 +268,7 @@ void threadMC(FacilityLayout<CoordinateType, AreaType> const& facility_layout,
 						// (4)
 						cplex_model.add
 						(
-							cplex_constr_out_flow[{type1_name, point_name}] <= cplex_x_generated[type1_name][point_name] + cplex_constr_in_flow[{type1_name, point_name}]
+							cplex_constr_out_flow[{type1_name, point_name}] <= cplex_x_produced[type1_name][point_name] + cplex_constr_in_flow[{type1_name, point_name}]
 						);
 						++point_i;
 					}
@@ -297,10 +290,10 @@ void threadMC(FacilityLayout<CoordinateType, AreaType> const& facility_layout,
 				IloIntExpr accumulated_sum(cplex_environment, 0);
 				for (auto const& [point_name, point] : current.points)
 					if (point.subject_count.contains(type1_name))
-						accumulated_sum += cplex_x_generated[type1_name][point_name];
+						accumulated_sum += cplex_x_produced[type1_name][point_name];
 				cplex_model.add
 				(
-					accumulated_sum == (IloInt)types.at(type1_name).total_generated_units
+					accumulated_sum == (IloInt)types.at(type1_name).production_target
 				);
 			}
 
@@ -325,10 +318,10 @@ void threadMC(FacilityLayout<CoordinateType, AreaType> const& facility_layout,
 				for (auto& [point1_name, point1] : answer.points)
 					for (auto const& [type1_name, type1_subject_count] : point1.subject_count)
 					{
-						if (point1.generated_unit_count.contains(type1_name))
-							point1.generated_unit_count[type1_name] += cplex.getValue(cplex_x_generated[type1_name][point1_name]);
+						if (point1.produced_unit_count.contains(type1_name))
+							point1.produced_unit_count[type1_name] += cplex.getValue(cplex_x_produced[type1_name][point1_name]);
 						else
-							point1.generated_unit_count[type1_name] = cplex.getValue(cplex_x_generated[type1_name][point1_name]);
+							point1.produced_unit_count[type1_name] = cplex.getValue(cplex_x_produced[type1_name][point1_name]);
 						for (auto const& [point2_name, point2] : answer.points)
 							for (auto const& [type2_name, type2_subject_count] : point2.subject_count)
 								if (total_flows.at(type1_name).at(type2_name) != 0)

@@ -88,7 +88,7 @@ struct FacilityArrangementPoint final
 {
 	AreaType                             remaining_capacity;
 	UnitMap<uint64_t>                    subject_count;
-	UnitMap<UnitType>                    generated_unit_count;
+	UnitMap<UnitType>                    produced_unit_count;
 	FacilityArrangementFlowMap<UnitType> out_flows;
 
 
@@ -134,7 +134,7 @@ template<typename CoordinateType, typename AreaType, typename UnitType>
 FacilityArrangementPoint<CoordinateType, AreaType, UnitType>::FacilityArrangementPoint(Point<CoordinateType, AreaType> const& point)
 	: remaining_capacity(point.capacity)
 	, subject_count()
-	, generated_unit_count()
+	, produced_unit_count()
 	, out_flows()
 {
 	this->x = point.x;
