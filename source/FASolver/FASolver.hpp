@@ -358,6 +358,7 @@ void FASolver<CoordinateType, AreaType, UnitType>::optimise(long double const al
 	logger.info("========================= CPLEX OUTPUT START =========================");
 	auto const computation_start_time = std::chrono::high_resolution_clock::now();
 	cplex.addMIPStart(cplex_xs_aggregator, cplex_feasxs_aggregator, IloCplex::MIPStartEffort::MIPStartCheckFeas);
+	cplex.setParam(IloCplex::Param::Preprocessing::Symmetry, 5);
 	cplex.solve();
 	auto const computation_runtime = std::chrono::high_resolution_clock::now() - computation_start_time;
 	auto const computation_runtime_hms = std::chrono::hh_mm_ss(computation_runtime);

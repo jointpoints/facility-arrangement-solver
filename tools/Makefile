@@ -12,7 +12,7 @@ WINKITS_PATH = C:\Program Files (x86)\Windows Kits
 BUILD_PATH = Facility Arrangement Solver ($(FASOLVER_TESTBUILD)build for Windows, v.$(FASOLVER_VERSION))
 
 build : win_prepare win_build win_link win_setup win_clean
-debug : win_prepare win_build_debug win_link win_setup win_clean
+debug : win_prepare win_build_debug win_link_debug win_setup win_setup_debug win_clean
 docs : win_docs
 else
 #	Setup for Linux
@@ -54,13 +54,19 @@ win_Logger_generic :
 win_build_debug : $(addprefix win_,$(addsuffix _generic_debug,$(BUILD_UNITS))) win_main_debug
 
 win_%_generic_debug :
-	cl -std:c++20 -Od -Z7 -EHsc -MD -c -I "$(CPLEX_PATH)\cplex\include" -I "$(CPLEX_PATH)\concert\include" -I "$(MSVC_PATH)\include" -I "$(WINKITS_PATH)\10\Include\10.0.19041.0\ucrt" -Fo"$(OBJ_PATH)\$*.obj" "..\$(SOURCE_PATH)\$*\$*.cpp"
+	cl -std:c++20 -Zi -EHsc -MD -c -I "$(CPLEX_PATH)\cplex\include" -I "$(CPLEX_PATH)\concert\include" -I "$(MSVC_PATH)\include" -I "$(WINKITS_PATH)\10\Include\10.0.19041.0\ucrt" -Fo"$(OBJ_PATH)\$*.obj" "..\$(SOURCE_PATH)\$*\$*.cpp"
 
 win_main_debug :
-	cl -std:c++20 -Od -Z7 -EHsc -MD -c -I "$(CPLEX_PATH)\cplex\include" -I "$(CPLEX_PATH)\concert\include" -I "$(MSVC_PATH)\include" -I "$(WINKITS_PATH)\10\Include\10.0.19041.0\ucrt" -Fo"$(OBJ_PATH)\main.obj" "..\$(SOURCE_PATH)\main.cpp"
+	cl -std:c++20 -Zi -EHsc -MD -c -I "$(CPLEX_PATH)\cplex\include" -I "$(CPLEX_PATH)\concert\include" -I "$(MSVC_PATH)\include" -I "$(WINKITS_PATH)\10\Include\10.0.19041.0\ucrt" -Fo"$(OBJ_PATH)\main.obj" "..\$(SOURCE_PATH)\main.cpp"
 
 win_Logger_generic_debug :
-	cl -std:c++latest -Od -Z7 -EHsc -MD -c -I "$(CPLEX_PATH)\cplex\include" -I "$(CPLEX_PATH)\concert\include" -I "$(MSVC_PATH)\include" -I "$(WINKITS_PATH)\10\Include\10.0.19041.0\ucrt" -Fo"$(OBJ_PATH)\Logger.obj" "..\$(SOURCE_PATH)\Logger\Logger.cpp"
+	cl -std:c++latest -Zi -EHsc -MD -c -I "$(CPLEX_PATH)\cplex\include" -I "$(CPLEX_PATH)\concert\include" -I "$(MSVC_PATH)\include" -I "$(WINKITS_PATH)\10\Include\10.0.19041.0\ucrt" -Fo"$(OBJ_PATH)\Logger.obj" "..\$(SOURCE_PATH)\Logger\Logger.cpp"
+
+win_link_debug :
+	cl $(OBJ_PATH)\main.obj $(addprefix $(OBJ_PATH)\,$(addsuffix .obj,$(BUILD_UNITS))) "$(CPLEX_PATH)\cplex\lib\x64_windows_msvc14\stat_mda\cplex2010.lib" "$(CPLEX_PATH)\cplex\lib\x64_windows_msvc14\stat_mda\ilocplex.lib" "$(CPLEX_PATH)\concert\lib\x64_windows_msvc14\stat_mda\concert.lib" -Fe"..\$(BUILD_PATH)\Facility Arrangement Solver.exe" -link -debug:full -LIBPATH:"$(MSVC_PATH)\lib\x64" -LIBPATH:"$(WINKITS_PATH)\10\Lib\10.0.19041.0\um\x64" -LIBPATH:"$(WINKITS_PATH)\10\Lib\10.0.19041.0\ucrt\x64"
+
+win_setup_debug :
+	powershell Get-ChildItem vc*.pdb \| Move-Item -Destination \"..\$(BUILD_PATH)\" -Force
 
 win_docs :
 	doxygen Doxyfile_docs
