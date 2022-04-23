@@ -29,23 +29,27 @@ namespace fa::util
 
 
 /**
- * @brief Generate a portion of Monte-Carlo samples
+ * @brief Generate a portion of Genetic Monte-Carlo samples
  *
- * Used by fa::produceMC to be run by a single thread to generate some part of
+ * Used by fa::produceMC to be run by a single thread to generate some part of Genetic
  * Monte-Carlo samples. Each thread returns the best found arrangement, the main thread
  * is then supposed to choose the best one among them.
  * 
- * @param facility_layout Description of the available facility layout.
+ * @param facility_arrangement The initial arrangement of subjects. In the first
+ *                             generation is expected to be empty. Otherwise, is expected
+ *                             to be the best arrangement found in the previous
+ *                             generation.
  * @param types Features of different types of subjects.
- * @param total_flows A map of maps containing pairs of a kind `<i : <j : f>>`
- *                    where \c f is the total flow from all subjects of type
- *                    \c i into all subjects of type \c j.
+ * @param total_flows A map of maps containing pairs of a kind `<i : <j : f>>` where \c f
+ *                    is the total flow from all subjects of type \c i into all subjects
+ *                    of type \c j.
  * @param return_value An object to store the return value of the thread.
  * @param logger A logger.
  * @param logger_mutex A mutex shared by all the threads to prevent multiple threads
  *                     writing to the logger simultaneously.
  * @param thread_id An ID to distinguish this thread.
- * @param workload Number of samples for a thread to generate.
+ * @param generation_i The ordinal number of the current generation.
+ * @param workload Number of samples for the thread to generate.
  * @param seed A seed to use for a pseudorandom number generator.
  * @param max_attempts Maximum number of attempts to make to generate one facility
  *                     arrangement.
@@ -305,21 +309,43 @@ namespace fa
 
 
 /**
- * @brief Generate a facility arrangement with Monte-Carlo
+ * @brief Generate a facility arrangement with Genetic Monte-Carlo
  *
- * Uses Monte-Carlo simulation to find a feasible solution. Pseudorandomly generates
- * multiple facility arrangements, computes the objective function for them and returns
- * one of the arrangements with the smallest found value of the objective function.
+ * Uses Monte-Carlo simulation to find a feasible solution. In each generation
+ * pseudorandomly generates multiple facility arrangements, computes the objective
+ * function for them and selects one of the arrangements with the smallest found value of
+ * the objective function. The selected facility arrangement is passed as the initial
+ * starting point for the next generation where a part of subjects is pseudorandomly
+ * fixed (each thread fixes different subset of subjects) while the rest of the subjects
+ * are pseudorandomly shuffled. The share of fixed subjects in each generation is
+ * calculated by the formula
+ * 
+ * @f[\frac{\text{<generation no.>}^2 - 1}{\text{<generation no.>}^2}@f]
+ * 
+ * where generations are numbered starting with @f$1@f$. A facility arrangement with the
+ * best value of the objective function is selected as the starting point for each
+ * consecutive generation. The selected arrangement in the last generation is returned to
+ * the user.
  * 
  * @param facility_layout Description of the available facility layout.
  * @param types Features of different types of subjects.
  * @param total_flows A map of maps containing pairs of a kind `<i : <j : f>>`
  *                    where \c f is the total flow from all subjects of type
  *                    \c i into all subjects of type \c j.
+ * @param logger A logger that is going to collect the logs and print them.
  * @param thread_count Number of threads to use to generate arrangements concurrently.
  *                     If set to `0`, the number of threads will be equal to the number
  *                     of available logical cores in the system.
- * @param workload Number of samples for \b each thread to generate.
+ * @param generation_count Number of generations to simulate. If set to `1`, the result
+ *                         of the algorithm is identical to the regular Monte-Carlo.
+ * @param workload Number of samples for \b each thread to generate in \b each
+ *                 generation.
+ * @param max_attempts The maximum number of attempts to spend on generation of a single
+ *                     arrangement. If all available subjects can't be placed in the
+ *                     facility layout after `max_attempts` attempts, the algorithm gives
+ *                     up and starts arranging subjects anew (all subjects that were
+ *                     fixed at the start of the generation simulation remain fixed and
+ *                     untouched).
  * 
  * @returns A facility arrangement with the best found value of the objective function.
  */

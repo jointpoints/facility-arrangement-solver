@@ -52,22 +52,49 @@ template<typename CoordinateType, typename AreaType>
 	requires numeric<CoordinateType> && numeric<AreaType>
 struct Point
 {
+	/// Abscissa, \b may be used by PlanarMetric to compute distances between several points.
 	CoordinateType x;
+	/// Ordinate, \b may be used by PlanarMetric to compute distances between several points.
 	CoordinateType y;
+	/// The area available in the point.
 	AreaType       capacity;
 
 
 
+	/// @name Constructors & destructors
+	/// @{
+	
+	/// Default constructor
 	Point(void) = default;
 	
+	/// By-values constructor
 	explicit
 	Point(CoordinateType const x, CoordinateType const y, AreaType const capacity)
 		: x(x), y(y), capacity(capacity) {};
+	
+	/// @}
 
-	inline bool const operator<(Point const& other) const
+
+
+	/// @name Operators
+	/// @{
+
+	/**
+	 * @brief Strict less
+	 *
+	 * Used to induce a strict partial order over points. If @f$a@f$ and @f$b@f$ are two
+	 * points, then
+	 * 
+	 * @f[a < b \Leftrightarrow \left[ \begin{aligned} &a_x < b_x \\ &\left\{ \begin{aligned} &a_x = b_x \\ &a_y < b_y \end{aligned} \right. \end{aligned} \right. .@f]
+	 * 
+	 * This order is needed to store points in maps.
+	 */
+	/*inline bool const operator<(Point const& other) const
 	{
 		return (this->x < other.x) || ((this->x == other.x) && (this->y < other.y));
-	}
+	}*/
+
+	/// @}
 };
 
 
@@ -86,26 +113,94 @@ template<typename CoordinateType, typename AreaType, typename UnitType>
 struct FacilityArrangementPoint final
 	: public Point<CoordinateType, AreaType>
 {
+	/// The unoccupied area available in the point
 	AreaType                             remaining_capacity;
+	/// A map containing pairs of a kind `<t : n>` where \c t is a name of a subject type and \c n is a number of subjects of type \c t placed into this point
 	UnitMap<uint64_t>                    subject_count;
+	/// A map containing pairs of a kind `<t : n>` where \c t is a name of a subject type and \c n is a number of objects of type \c t produced by all subjects located in this point
 	UnitMap<UnitType>                    produced_unit_count;
+	/// A map containing pairs of a kind `<{t1, t2} : <p : n>>` where \c t1 and \c t2 are names of subject types, \c p is a name of a point and \c n is a number of objects sent from all subjects of type \c t1 located in this point into all subjects of type \c t2 located in \c p
 	FacilityArrangementFlowMap<UnitType> out_flows;
 
 
 
+	/// @name Constructors & destructors
+	/// @{
+	
+	/// Default constructor
 	FacilityArrangementPoint(void) = default;
 
+	/// Copy constructor
 	FacilityArrangementPoint(FacilityArrangementPoint<CoordinateType, AreaType, UnitType> const&) = default;
 
+	/**
+	 * @brief Constructor from a regular Point
+	 *
+	 * Copies values of all the properties of a regular point, calls default constructors
+	 * for everything else.
+	 * 
+	 * @param point A point to copy the data from.
+	 */
 	FacilityArrangementPoint(Point<CoordinateType, AreaType> const& point);
 
+	/// @}
+
+
+
+	/// @name Access
+	/// @{
+	
+	/**
+	 * @brief Count the total number of subjects
+	 *
+	 * Counts the total number of all subjects located in this point.
+	 * 
+	 * @returns The number of placed subjects.
+	 */
 	uint64_t const countSubjects(void) const;
 
+	/**
+	 * @brief Count the number of subjects
+	 *
+	 * Counts the number of subjects of the given type located in this point.
+	 * 
+	 * @param type_name The name of the type.
+	 * 
+	 * @returns The number of placed subjects of type \c type_name.
+	 */ 
 	uint64_t const countSubjects(std::string const type_name) const;
 
+	/// @}
+
+
+
+	/// @name Modifiers
+	/// @{
+	
+	/**
+	 * @brief Place subject into point
+	 *
+	 * Places a new subject of the given type into this point.
+	 * 
+	 * @param type_name The name of the type.
+	 * @param area The area to be occupied by the new subject.
+	 * 
+	 * @returns \c true if the subject was successfully placed, \c false if the available
+	 * free area in the point is less than \c area.
+	 */
 	bool const addSubject(std::string const type_name, AreaType const area);
 
+	/**
+	 * @brief Remove subject from point
+	 *
+	 * Remove a subject of the given type from this point.
+	 * 
+	 * @param type_name The name of the type.
+	 * @param area The area to be freed.
+	 */
 	void removeSubject(std::string const type_name, AreaType const area);
+
+	/// @}
 };
 
 
@@ -240,6 +335,13 @@ namespace points
  *
  * Creates a facility layout in a form of a regular grid with preset equal distances
  * between neighbouring points and equal area capacities for all points.
+ * 
+ * @param row_count The number of rows in the grid.
+ * @param column_count The number of columns in the grid.
+ * @param distance The distance between neighbouring points.
+ * @param capacity The area available in each point of the grid.
+ * 
+ * @returns Grid as a PointMap.
  */
 template<typename CoordinateType, typename AreaType>
 	requires numeric<CoordinateType> && numeric<AreaType>

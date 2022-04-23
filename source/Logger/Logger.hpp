@@ -60,12 +60,17 @@ public:
 	/// @name Constructors & destructors
 	/// @{
 
+	/// Not default-constructable
 	Logger(void) = delete;
+
+	/// Not copyable
 	Logger(Logger&) = delete;
+
+	/// Not movable
 	Logger(Logger&&) = delete;
 
 	/**
-	 * @brief Construct a logger for the given file
+	 * @brief Construct a logger bound to the given file
 	 *
 	 * Creates a new logger connected to the specified file.
 	 * 
@@ -87,7 +92,7 @@ public:
 	Logger(std::string const path, int& status_code) noexcept;
 
 	/**
-	 * @brief Construct a logger to the given stream
+	 * @brief Construct a logger bound to the given stream
 	 *
 	 * Creates a new logger connected to the specified output stream.
 	 * 
@@ -307,6 +312,7 @@ public:
 	/// @name Constructors & destructors
 	/// @{
 
+	/// Not default-constructable
 	LoggerCore(void) = delete;
 
 	/**

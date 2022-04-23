@@ -67,8 +67,7 @@ class FASolver final
 	SubjectTypeMap<AreaType, UnitType> const&       types;
 	/// Sequence of types.
 	std::vector<std::string>                        type_names;
-	/// Price of a single subject (dupticates the \c price field of SubjectType for
-	/// further convenience, may be deleted in the future).
+	/// Price of a single subject (dupticates the \c price field of SubjectType for further convenience, may be deleted in the future).
 	IloNumArray                                     cplex_data_price;
 	/// Total flows.
 	FlowMap<UnitType> const                         total_flows;
@@ -78,13 +77,14 @@ class FASolver final
 
 
 public:
-	/// @name Constructors and destructors
+	/// @name Constructors & destructors
 	/// @{
 	
+	/// Not default-constructable
 	FASolver(void) = delete;
 	
 	/**
-	 * @brief Constructor from data
+	 * @brief By-data constructor
 	 *
 	 * Constructs a new FASolver object for the provided instance of the problem to
 	 * solve.

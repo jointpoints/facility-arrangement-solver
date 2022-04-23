@@ -70,4 +70,4 @@ win_setup_debug :
 
 win_docs :
 	doxygen Doxyfile_docs
-	powershell New-Item -Path .\Documentation\Documentation.lnk -ItemType SymbolicLink -Value .\Documentation\html\index.html
+	powershell New-Item -Path .\Documentation\Documentation -ItemType SymbolicLink -Value .\Documentation\html\index.html -Force

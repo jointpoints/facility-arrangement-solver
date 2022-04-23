@@ -34,7 +34,8 @@
  * distance functions are not really expected to be metrics in the mathematical sense of
  * this word.
  * 
- * @note Intended to only be used within FacilityLayout.
+ * @note Intended to only be used within FacilityLayout, FacilityArrangement, and
+ * FASolver.
  */
 class PlanarMetric
 {
@@ -47,11 +48,14 @@ public:
 	/// @name Constructors and destructors
 	/// @{
 
+	/// Default constructor
 	PlanarMetric(void) = default;
+
+	/// Copy constructor
 	PlanarMetric(PlanarMetric const&) = default;
 
 	/**
-	 * @brief Constructor
+	 * @brief By-value constructor
 	 *
 	 * Constructs a new PlanarMetric object.
 	 * 
