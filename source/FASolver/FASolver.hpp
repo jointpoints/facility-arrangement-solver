@@ -9,8 +9,7 @@
 
 
 
-#include "../Facility/Facility.hpp"
-#include "../SubjectType/SubjectType.hpp"
+#include "../FAHeuristic_GeneticMonteCarlo/FAHeuristic_GeneticMonteCarlo.hpp"
 #include <type_traits>
 #include <numeric>
 #include <chrono>
@@ -256,14 +255,15 @@ void FASolver<CoordinateType, AreaType, UnitType>::optimise(long double const al
 	logger.info("Initialisation of variables and constraints finished.");
 
 	// Find feasible solution with the help of heuristic
-	logger.info("Execution of Simple Monte-Carlo heuristic started...");
-	FacilityArrangement<CoordinateType, AreaType, UnitType> const feasible_solution = fa::produceMC(
+	logger.info("Execution of Genetic Monte-Carlo heuristic started...");
+	FacilityArrangement<CoordinateType, AreaType, UnitType> const feasible_solution = fa::GMC(
 		this->facility_layout,
 		this->types,
 		this->total_flows,
 		logger,
 		0,
-		(uint64_t)std::sqrt(point_count) * type_count * type_count
+		3,
+		(uint64_t)std::sqrt(point_count) * type_count * 2
 	);
 	logger.info("Execution of heuristic finished.");
 	

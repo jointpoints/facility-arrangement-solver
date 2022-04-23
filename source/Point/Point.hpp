@@ -99,7 +99,13 @@ struct FacilityArrangementPoint final
 
 	FacilityArrangementPoint(Point<CoordinateType, AreaType> const& point);
 
+	uint64_t const countSubjects(void) const;
+
+	uint64_t const countSubjects(std::string const type_name) const;
+
 	bool const addSubject(std::string const type_name, AreaType const area);
+
+	void removeSubject(std::string const type_name, AreaType const area);
 };
 
 
@@ -141,7 +147,32 @@ FacilityArrangementPoint<CoordinateType, AreaType, UnitType>::FacilityArrangemen
 	this->y = point.y;
 	this->capacity = point.capacity;
 	return;
-};
+}
+
+
+
+
+
+template<typename CoordinateType, typename AreaType, typename UnitType>
+	requires numeric<CoordinateType> && numeric<AreaType> && numeric<UnitType>
+uint64_t const FacilityArrangementPoint<CoordinateType, AreaType, UnitType>::countSubjects(void) const
+{
+	uint64_t answer = 0;
+	for (auto const& [type_name, type_count] : this->subject_count)
+		answer += type_count;
+	return answer;
+}
+
+
+
+
+
+template<typename CoordinateType, typename AreaType, typename UnitType>
+	requires numeric<CoordinateType> && numeric<AreaType> && numeric<UnitType>
+uint64_t const FacilityArrangementPoint<CoordinateType, AreaType, UnitType>::countSubjects(std::string const type_name) const
+{
+	return this->subject_count.contains(type_name) ? this->subject_count.at(type_name) : 0;
+}
 
 
 
@@ -159,6 +190,21 @@ bool const FacilityArrangementPoint<CoordinateType, AreaType, UnitType>::addSubj
 		this->subject_count[type_name] = 1;
 	this->remaining_capacity -= area;
 	return true;
+}
+
+
+
+
+
+template<typename CoordinateType, typename AreaType, typename UnitType>
+	requires numeric<CoordinateType> && numeric<AreaType> && numeric<UnitType>
+void FacilityArrangementPoint<CoordinateType, AreaType, UnitType>::removeSubject(std::string const type_name, AreaType const area)
+{
+	if (!this->subject_count.contains(type_name) || this->subject_count.at(type_name) == 0)
+		return;
+	this->subject_count[type_name] -= 1;
+	this->remaining_capacity += area;
+	return;
 }
 
 
