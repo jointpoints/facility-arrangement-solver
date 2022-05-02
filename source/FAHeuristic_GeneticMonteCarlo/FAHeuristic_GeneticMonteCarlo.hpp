@@ -77,14 +77,14 @@ void threadGMC(FacilityArrangement<CoordinateType, AreaType, UnitType> facility_
 	std::mt19937_64 prng(seed);
 	std::uniform_int_distribution<> distribution_points(0, facility_arrangement.points.size() - 1);
 
-	// Fix (`generation_i`^2 - 1) / `generation_i`^2 subjects in the given facility
+	// Fix (2^`generation_i` - 1) / 2^`generation_i` subjects in the given facility
+	if (generation_i > 0)
 	{
-		double subject_count = [&types](){double answer; for (auto const& [type_name, type] : types) answer += type.initially_available; return answer;}();
+		double subject_count = [&types](){double answer = 0; for (auto const& [type_name, type] : types) answer += type.initially_available; return answer;}();
 		std::uniform_int_distribution<> distribution_types(0, types.size() - 1);
-		if (generation_i > 1)
-			for (auto& [type_name, type] : types)
-				type.initially_available = 0;
-		for (uint64_t subject_i = 0; subject_i / subject_count < (generation_i * generation_i - 1) / (double)(generation_i * generation_i); ++subject_i)
+		for (auto& [type_name, type] : types)
+			type.initially_available = 0;
+		for (uint64_t subject_i = 0; subject_i / subject_count <= 1.L / (1U << generation_i); ++subject_i)
 		{
 			auto point_it = std::next(facility_arrangement.points.begin(), distribution_points(prng));
 			while (point_it->second.countSubjects() == 0)
@@ -263,7 +263,7 @@ void threadGMC(FacilityArrangement<CoordinateType, AreaType, UnitType> facility_
 		if ((sample_i + 1) % 100 == 0)
 		{
 			logger_lock.lock();
-			logger.info("Generation #" + std::to_string(generation_i) + ", thread #" + std::to_string(thread_id) + " reports:");
+			logger.info("Generation #" + std::to_string(generation_i + 1) + ", thread #" + std::to_string(thread_id) + " reports:");
 			logger.info("\t   Processed samples = " + std::to_string(sample_i + 1) + "/" + std::to_string(workload) + "\n");
 			logger.info("\t          Successful = " + std::to_string(sample_i + 1 - skipped_sample_count) + "/" + std::to_string(sample_i + 1));
 			if (skipped_sample_count > 0)
@@ -320,9 +320,9 @@ namespace fa
  * are pseudorandomly shuffled. The share of fixed subjects in each generation is
  * calculated by the formula
  * 
- * @f[\frac{\text{<generation no.>}^2 - 1}{\text{<generation no.>}^2}@f]
+ * @f[\frac{2^\text{<generation no.>} - 1}{2^\text{<generation no.>}}@f]
  * 
- * where generations are numbered starting with @f$1@f$. A facility arrangement with the
+ * where generations are numbered starting with @f$0@f$. A facility arrangement with the
  * best value of the objective function is selected as the starting point for each
  * consecutive generation. The selected arrangement in the last generation is returned to
  * the user.
@@ -398,7 +398,7 @@ FacilityArrangement<CoordinateType, AreaType, UnitType> const GMC(FacilityLayout
 				std::cref(logger),
 				std::ref(logger_mutex),
 				thread_i,
-				generation_i + 1,
+				generation_i,
 				workload,
 				seeds[thread_i],
 				max_attempts
