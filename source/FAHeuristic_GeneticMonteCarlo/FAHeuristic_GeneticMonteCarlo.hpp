@@ -78,7 +78,7 @@ void threadGMC(FacilityArrangement<CoordinateType, AreaType, UnitType> facility_
 	std::uniform_int_distribution<> distribution_points(0, facility_arrangement.points.size() - 1);
 
 	// Fix (2^`generation_i` - 1) / 2^`generation_i` subjects in the given facility
-	if (generation_i > 0)
+	/*if (generation_i > 0)
 	{
 		double subject_count = [&types](){double answer = 0; for (auto const& [type_name, type] : types) answer += type.initially_available; return answer;}();
 		std::uniform_int_distribution<> distribution_types(0, types.size() - 1);
@@ -95,7 +95,7 @@ void threadGMC(FacilityArrangement<CoordinateType, AreaType, UnitType> facility_
 			point_it->second.removeSubject(type_it->first, type_it->second.area);
 			++(type_it->second.initially_available);
 		}
-	}
+	}*/
 
 	uint64_t skipped_sample_count = 0;
 	for (uint64_t sample_i = 0; sample_i < workload; ++sample_i)
@@ -103,17 +103,53 @@ void threadGMC(FacilityArrangement<CoordinateType, AreaType, UnitType> facility_
 		FacilityArrangement<CoordinateType, AreaType, UnitType> current(facility_arrangement);
 
 		// Arrange subjects randomly within the given layout
-		for (auto const& [type_name, type] : types)
-		{
-			for (uint64_t subject_i = 0; subject_i < type.initially_available; ++subject_i)
+		if (generation_i == 0)
+			for (auto const& [type_name, type] : types)
 			{
-				// Try to place a subject of type `type_name` somewhere in the facility
+				for (uint64_t subject_i = 0; subject_i < type.initially_available; ++subject_i)
+				{
+					// Try to place a subject of type `type_name` somewhere in the facility
+					auto point_it = std::next(current.points.begin(), distribution_points(prng));
+					uint64_t attempt_i = 0;
+					for (; (attempt_i < max_attempts) && (!point_it->second.addSubject(type_name, type.area)); ++attempt_i)
+						point_it = std::next(current.points.begin(), distribution_points(prng));
+					if (attempt_i >= max_attempts)
+						goto skip_sample;
+				}
+			}
+		else
+		{
+			double subject_count = [&types](){double answer = 0; for (auto const& [type_name, type] : types) answer += type.initially_available; return answer;}();
+			std::uniform_int_distribution<> distribution_types(0, types.size() - 1);
+			/*for (auto& [type_name, type] : types)
+				type.initially_available = 0;*/
+			for (uint64_t subject_i = 0; subject_i / subject_count <= 1.L / (1U << generation_i); ++subject_i)
+			{
 				auto point_it = std::next(current.points.begin(), distribution_points(prng));
-				uint64_t attempt_i = 0;
-				for (; (attempt_i < max_attempts) && (!point_it->second.addSubject(type_name, type.area)); ++attempt_i)
+				while (point_it->second.countSubjects() == 0)
 					point_it = std::next(current.points.begin(), distribution_points(prng));
-				if (attempt_i >= max_attempts)
-					goto skip_sample;
+				auto type_it = std::next(types.begin(), distribution_types(prng));
+				while (point_it->second.countSubjects(type_it->first) == 0)
+					type_it = std::next(types.begin(), distribution_types(prng));
+				point_it->second.removeSubject(type_it->first, type_it->second.area);
+				//++(type_it->second.initially_available);
+				auto new_point_it = current.points.begin();
+				long double distance = std::numeric_limits<long double>::infinity();
+				for (uint8_t new_point_candidate_i = 0; new_point_candidate_i < 10; ++new_point_candidate_i)
+				{
+					auto new_point_candidate_it = std::next(current.points.begin(), distribution_points(prng));
+					uint64_t attempt_i = 0;
+					for (; (attempt_i < max_attempts) && (new_point_candidate_it == point_it || new_point_candidate_it->second.remaining_capacity < type_it->second.area); ++attempt_i)
+						new_point_candidate_it = std::next(current.points.begin(), distribution_points(prng));
+					if (attempt_i >= max_attempts)
+						goto skip_sample;
+					if (current.distance(point_it->second, new_point_candidate_it->second) < distance)
+					{
+						new_point_it = new_point_candidate_it;
+						distance = current.distance(point_it->second, new_point_it->second);
+					}
+				}
+				new_point_it->second.addSubject(type_it->first, type_it->second.area);
 			}
 		}
 
@@ -373,9 +409,9 @@ FacilityArrangement<CoordinateType, AreaType, UnitType> const GMC(FacilityLayout
 
 	// Start threads and wait for them to finish computations
 	logger.info("Starting feasible arrangement search with Genetic Monte-Carlo heuristic.");
-	logger.info("Search will be done within " + std::to_string(generation_count) + " generations, " + std::to_string(thread_count) + " threads.");
-	logger.info("Each thread will generate " + std::to_string(workload) + " samples per generation.");
-	logger.info("Each sample will take at most " + std::to_string(max_attempts) + " attempts to generate.");
+	logger.info("Search will be done in " + std::to_string(generation_count) + " generations and " + std::to_string(thread_count) + " threads.");
+	logger.info("Each thread will generate " + std::to_string(workload) + " samples for each generation.");
+	logger.info("Construction of each sample will take at most " + std::to_string(max_attempts) + " attempts.");
 	std::vector<std::thread> threads;
 	std::vector<std::future<util::ThreadReturn<CoordinateType, AreaType, UnitType>>> futures;
 	std::mutex logger_mutex;
