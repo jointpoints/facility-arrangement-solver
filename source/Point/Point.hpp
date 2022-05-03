@@ -11,6 +11,7 @@
 
 #include "../Common/Common.hpp"
 #include "../SubjectType/SubjectType.hpp"
+#include <limits>
 //#include <ranges>
 
 
@@ -63,12 +64,13 @@ class Point final
 	 * 
 	 * @param type_name The name of the subject type.
 	 * @param type The type itself.
+	 * @param count The number of subjects to be added.
 	 * 
 	 * @returns \c true if the subject was placed successfully, \c false if there is not
 	 * enough free area in the point.
 	 */
 	template<typename SubjectCountInputType, typename UnitType, typename PriceType>
-	bool const addSubject(std::string const type_name, SubjectType<AreaOutputType, SubjectCountInputType, UnitType, PriceType> const& type);
+	bool const _addSubject(std::string const type_name, SubjectType<AreaOutputType, SubjectCountInputType, UnitType, PriceType> const& type, SubjectCountOutputType const count);
 
 	/**
 	 * @brief Remove a subject from the point
@@ -77,9 +79,10 @@ class Point final
 	 * 
 	 * @param type_name The name of the subject type.
 	 * @param type The type itself.
+	 * @param count The number of subjects to be removed.
 	 */
 	template<typename SubjectCountInputType, typename UnitType, typename PriceType>
-	void removeSubject(std::string const type_name, SubjectType<AreaOutputType, SubjectCountInputType, UnitType, PriceType> const& type);
+	void _removeSubject(std::string const type_name, SubjectType<AreaOutputType, SubjectCountInputType, UnitType, PriceType> const& type, SubjectCountOutputType const count);
 
 	/// @}
 
@@ -161,16 +164,33 @@ public:
 template<typename CoordinateType, typename AreaInputType, typename AreaOutputType, typename SubjectCountOutputType>
 template<typename SubjectCountInputType, typename UnitType, typename PriceType>
 bool const Point<CoordinateType, AreaInputType, AreaOutputType, SubjectCountOutputType>
-	::addSubject(std::string const type_name, SubjectType<AreaOutputType, SubjectCountInputType, UnitType, PriceType> const& type)
+	::_addSubject(std::string const type_name, SubjectType<AreaOutputType, SubjectCountInputType, UnitType, PriceType> const& type, SubjectCountOutputType const count)
 {
-	if (this->_area_free < type.area)
+	if (this->_area_free < type.area * count)
 		return false;
 	if (this->_subject_count.contains(type_name))
-		++(this->_subject_count[type_name]);
+		this->_subject_count[type_name] += count;
 	else
-		this->_subject_count[type_name] = 1;
-	this->_area_free -= type.area;
+		this->_subject_count[type_name] = count;
+	this->_area_free -= type.area * count;
 	return true;
+}
+
+
+
+template<typename CoordinateType, typename AreaInputType, typename AreaOutputType, typename SubjectCountOutputType>
+template<typename SubjectCountInputType, typename UnitType, typename PriceType>
+void Point<CoordinateType, AreaInputType, AreaOutputType, SubjectCountOutputType>
+	::_removeSubject(std::string const type_name, SubjectType<AreaOutputType, SubjectCountInputType, UnitType, PriceType> const& type, SubjectCountOutputType const count)
+{
+	if (this->_subject_count.contains(type_name))
+	{
+		if (this->_subject_count[type_name] == count)
+			this->_subject_count.erase(type_name);
+		else
+			this->_subject_count[type_name] -= count;
+		this->_area_free += type.area * count;
+	}
 }
 
 

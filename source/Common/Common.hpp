@@ -19,10 +19,31 @@
 
 
 
+#define FASFLOAT_ULPS 6
+
+
+
+
+
 using FASInteger = uint64_t;
-using FASFloat = long double;
+struct FASFloat
+{
+	long double core;
+
+	FASFloat(void) : core(0) {};
+	FASFloat(FASFloat const &value) : core(value.core) {};
+	
+	template<typename X>
+		requires std::floating_point<X> || std::integral<X>
+	FASFloat(X const value) : core(value) {};
+};
 struct FASNone
 {
+	FASNone(void) {};
+
+	template<typename X>
+	FASNone(X &) {};
+
 	template<typename X>
 	inline
 	FASNone & operator=(X &) {return *this};
@@ -30,11 +51,6 @@ struct FASNone
 	template<typename X>
 	inline
 	FASNone & operator=(X &&) {return *this};
-
-	FASNone(void) {};
-
-	template<typename X>
-	FASNone(X &) {};
 };
 
 
@@ -66,7 +82,7 @@ using BinaryMap = std::map<std::string, UnaryMap<ValueType>>;
 
 
 
-// Operators for FASNone
+// Operators for FASFloat
 
 
 
@@ -77,7 +93,78 @@ using BinaryMap = std::map<std::string, UnaryMap<ValueType>>;
 
 
 
-//
+template<typename X>
+	requires std::floating_point<X> || std::integral<X> || std::same_as<X, FASFloat>
+inline
+bool const operator==(FASFloat const &fas_float, X const &other)
+{
+	return std::abs(fas_float.core - other) <= std::numeric_limits<X>::epsilon * std::abs(fas_float.core + other) * FASFLOAT_ULPS || std::abs(fas_float.core - other) < std::numeric_limits<X>::min();
+}
+
+template<>
+inline
+bool const operator==(FASFloat const &fas_float, FASFloat const &other)
+{
+	return fas_float == other.core;
+}
+
+template<typename X>
+	requires std::floating_point<X> || std::integral<X>
+inline
+bool const operator==(X const &other, FASFloat const &fas_float)
+{
+	return fas_float == other;
+}
+
+
+
+template<typename X>
+	requires std::floating_point<X> || std::integral<X> || std::same_as<X, FASFloat>
+inline
+bool const operator<(FASFloat const &fas_float, X const &other)
+{
+	return fas_float != other && fas_float.core < other;
+}
+
+template<>
+inline
+bool const operator<(FASFloat const& fas_float, FASFloat const &other)
+{
+	return fas_float < other.core;
+}
+
+template<typename X>
+	requires std::floating_point<X> || std::integral<X>
+inline
+bool const operator<(X const &other, FASFloat const &fas_float)
+{
+	return fas_float != other && other < fas_float.core;
+}
+
+
+
+template<typename X>
+	requires std::floating_point<X> || std::integral<X> || std::same_as<X, FASFloat>
+inline
+bool const operator>(FASFloat const &fas_float, X const &other)
+{
+	return fas_float != other && fas_float.core > other;
+}
+
+template<>
+inline
+bool const operator>(FASFloat const& fas_float, FASFloat const &other)
+{
+	return fas_float > other.core;
+}
+
+template<typename X>
+	requires std::floating_point<X> || std::integral<X>
+inline
+bool const operator>(X const &other, FASFloat const &fas_float)
+{
+	return fas_float != other && other > fas_float.core;
+}
 
 
 
