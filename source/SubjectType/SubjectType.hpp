@@ -9,8 +9,7 @@
 
 
 
-#include <map>
-#include <cstdint> // fixed-width integers
+#include "../Common/Common.hpp"
 
 
 
@@ -24,29 +23,23 @@
  * production chain or, in other words, are indistinguishable from one another from the
  * functional point of view.
  */
-template<typename AreaType, typename UnitType>
+template<typename AreaInputType, typename SubjectCountType, typename UnitType, typename PriceType>
+	requires fas_numeric<AreaInputType> && fas_numeric<SubjectCountType> && fas_numeric<UnitType> && fas_numeric<UnitType>
 struct SubjectType final
 {
-	/// The input capacity of a single subject of the type.
-	UnitType    in_capacity;
-	/// The output capacity of a single subject of the type.
-	UnitType    out_capacity;
-	/// The number of objects all subjects of the type \b must produce.
-	UnitType    production_target;
-	/// The area occupied by a single subject of the type.
-	AreaType    area;
-	/// The number of subjects initially available for the placement.
-	uint64_t    initially_available;
-	/// The price for each additional subject of the type.
-	long double price;
+	/// Input capacity of a single subject of the type
+	UnitType in_capacity;
+	/// Output capacity of a single subject of the type
+	UnitType out_capacity;
+	/// The number of objects all subjects of the type \b must produce
+	UnitType production_target;
+	/// Area occupied by a single subject of the type
+	AreaInputType area;
+	/// The number of subjects initially available for the placement
+	SubjectCountType initially_available;
+	/// The price for each additional subject of the type
+	PriceType price;
 };
-
-
-
-
-
-template<typename AreaType, typename UnitType>
-using SubjectTypeMap = std::map<std::string, SubjectType<AreaType, UnitType>>;
 
 
 
