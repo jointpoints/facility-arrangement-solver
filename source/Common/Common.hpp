@@ -19,7 +19,7 @@
 
 
 
-#define FASFLOAT_ULPS 6
+#define FASFLOAT_ULPS 0b100
 
 
 
@@ -164,6 +164,82 @@ inline
 bool const operator>(X const &other, FASFloat const &fas_float)
 {
 	return fas_float != other && other > fas_float.core;
+}
+
+
+
+#define OP(s)                                                                        \
+template<typename X>                                                                 \
+    requires std::floating_point<X> || std::integral<X> || std::same_as<X, FASFloat> \
+inline                                                                               \
+FASFloat & operator s (FASFloat const &fas_float, X const &other)                    \
+{                                                                                    \
+    return FASFloat(fas_float s other);                                              \
+}                                                                                    \
+                                                                                     \
+template<>                                                                           \
+inline                                                                               \
+FASFloat & operator s (FASFloat const &fas_float, FASFloat const &other)             \
+{                                                                                    \
+    return fas_float s other.core;                                                   \
+}                                                                                    \
+                                                                                     \
+template<typename X>                                                                 \
+    requires std::floating_point<X> || std::integral<X>                              \
+inline                                                                               \
+FASFloat & operator s (X const &other, FASFloat const &fas_float)                    \
+{                                                                                    \
+    return FASFloat(other s fas_float);                                              \
+}
+
+OP(+)
+OP(-)
+OP(*)
+OP(/)
+
+
+
+#define OP(s)                                                                        \
+template<typename X>                                                                 \
+    requires std::floating_point<X> || std::integral<X> || std::same_as<X, FASFloat> \
+inline                                                                               \
+FASFloat & operator s (FASFloat &fas_float, X const &other)                          \
+{                                                                                    \
+    fas_float.core s other;                                                          \
+    return fas_float;                                                                \
+}                                                                                    \
+                                                                                     \
+template<>                                                                           \
+inline                                                                               \
+FASFloat & operator s (FASFloat &fas_float, FASFloat const &other)                   \
+{                                                                                    \
+    fas_float s other.core;                                                          \
+    return fas_float;                                                                \
+}                                                                                    \
+                                                                                     \
+template<typename X>                                                                 \
+    requires std::floating_point<X> || std::integral<X>                              \
+inline                                                                               \
+X & operator s (X &other, FASFloat const &fas_float)                                 \
+{                                                                                    \
+    other s fas_float.core;                                                          \
+    return other;                                                                    \
+}
+
+OP(+=)
+OP(-=)
+OP(*=)
+OP(/=)
+
+#undef OP
+
+
+
+template<typename X>
+inline
+std::basic_ostream<X> & operator<<(std::basic_ostream<X> &stream, FASFloat const &fas_float)
+{
+	return stream << fas_float.core;
 }
 
 
