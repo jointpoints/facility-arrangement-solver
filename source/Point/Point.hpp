@@ -99,13 +99,9 @@ public:
 	explicit
 	Point(CoordinateType const x, CoordinateType const y, AreaInputType const area);
 	
-	/// Copy constructor
-	template<typename AnotherAreaOutputType, typename AnotherSubjectCountOutputType>
-	Point(Point<CoordinateType, AreaInputType, AnotherAreaOutputType, AnotherSubjectCountOutputType> &point);
-	
-	/// Move constructor
-	template<typename AnotherAreaOutputType, typename AnotherSubjectCountOutputType>
-	Point(Point<CoordinateType, AreaInputType, AnotherAreaOutputType, AnotherSubjectCountOutputType> &&point);
+	/// Conversion constructor
+	template<typename Old_AreaOutputType, typename Old_SubjectCountOutputType>
+	Point(Point<CoordinateType, AreaInputType, Old_AreaOutputType, Old_SubjectCountOutputType> const &point);
 	
 	/// @}
 
@@ -191,6 +187,71 @@ void Point<CoordinateType, AreaInputType, AreaOutputType, SubjectCountOutputType
 			this->_subject_count[type_name] -= count;
 		this->_area_free += type.area * count;
 	}
+}
+
+
+
+template<typename CoordinateType, typename AreaInputType, typename AreaOutputType, typename SubjectCountOutputType>
+Point<CoordinateType, AreaInputType, AreaOutputType, SubjectCountOutputType>
+	::Point(CoordinateType const x, CoordinateType const y, AreaInputType const area)
+	: _x(x)
+	, _y(y)
+	, _area_total(area)
+	, _area_free(area)
+{}
+
+
+
+template<typename CoordinateType, typename AreaInputType, typename AreaOutputType, typename SubjectCountOutputType>
+template<typename Old_AreaOutputType, typename Old_SubjectCountOutputType>
+Point<CoordinateType, AreaInputType, AreaOutputType, SubjectCountOutputType>
+	::Point(Point<CoordinateType, AreaInputType, Old_AreaOutputType, Old_SubjectCountOutputType> const &point)
+	: _x(point._x)
+	, _y(point._y)
+	, _area_total(point._area_total)
+	, _area_free(point._area_free)
+{
+	for (auto const &[type_name, type_count] : point._subject_count)
+		this->_subject_count[type_name] = type_count;
+	return;
+}
+
+
+
+#define DEFINE_GETTER(getterName, ReturnType, getter_var)                                                           \
+template<typename CoordinateType, typename AreaInputType, typename AreaOutputType, typename SubjectCountOutputType> \
+ReturnType const Point<CoordinateType, AreaInputType, AreaOutputType, SubjectCountOutputType>                       \
+    :: ## getterName (void) const                                                                                   \
+{                                                                                                                   \
+    return this-> ## getter_var;                                                                                    \
+}
+
+DEFINE_GETTER(x, CoordinateType, _x)
+DEFINE_GETTER(y, CoordinateType, _y)
+DEFINE_GETTER(areaTotal, AreaInputType, _area_total)
+DEFINE_GETTER(areaFree, AreaOutputType, _area_free)
+
+#undef DEFINE_GETTER
+
+
+
+template<typename CoordinateType, typename AreaInputType, typename AreaOutputType, typename SubjectCountOutputType>
+SubjectCountOutputType const Point<CoordinateType, AreaInputType, AreaOutputType, SubjectCountOutputType>
+	::countSubjects(void) const
+{
+	SubjectCountOutputType answer = 0;
+	for (auto const &[type_name, type_count] : this->_subject_count)
+		answer += type_count;
+	return answer;
+}
+
+
+
+template<typename CoordinateType, typename AreaInputType, typename AreaOutputType, typename SubjectCountOutputType>
+SubjectCountOutputType const Point<CoordinateType, AreaInputType, AreaOutputType, SubjectCountOutputType>
+	::countSubjects(std::string const type_name) const
+{
+	return this->_subject_count.contains(type_name) ? this->_subject_count.at(type_name) : 0;
 }
 
 
