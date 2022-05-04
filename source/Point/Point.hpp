@@ -269,6 +269,11 @@ SubjectCountOutputType const Point<CoordinateType, AreaInputType, AreaOutputType
 
 
 
+
+
+
+
+
 /**
  * @namespace points
  * @brief Tools to create facilities
@@ -296,8 +301,8 @@ namespace points
  * @returns Grid as a PointMap.
  */
 template<typename CoordinateType, typename AreaInputType>
-	requires numeric<CoordinateType> && numeric<AreaInputType>
-PointMap<CoordinateType, AreaInputType> const grid(uint32_t const row_count, uint32_t const column_count, CoordinateType const distance, AreaInputType const capacity)
+	requires fas_numeric<CoordinateType> && fas_numeric<AreaInputType>
+UnaryMap<Point<CoordinateType, AreaInputType>> const grid(uint32_t const row_count, uint32_t const column_count, CoordinateType const distance, AreaInputType const capacity)
 {
 	PointMap<CoordinateType, AreaInputType> answer;
 
