@@ -11,6 +11,7 @@
 
 #include "../Common/Common.hpp"
 #include "../SubjectType/SubjectType.hpp"
+#include <type_traits>
 #include <limits>
 //#include <ranges>
 
@@ -24,10 +25,24 @@
  *
  * Represents a place within a facility where subjects can be placed.
  */
-template<typename CoordinateType, typename AreaInputType, typename AreaOutputType = FASNone, typename SubjectCountOutputType = FASNone>
-	requires fas_numeric<CoordinateType> && fas_numeric<AreaInputType> && fas_numeric_or_none<AreaOutputType> && fas_numeric_or_none<SubjectCountOutputType>
+template<typename CoordinateType, typename AreaInputType, typename SubjectCountOutputType = FASNone>
+	requires fas_numeric<CoordinateType> && fas_numeric<AreaInputType> && fas_numeric_or_none<SubjectCountOutputType>
 class Point final
 {
+	using AreaOutputType = std::conditional
+	<
+		std::is_same<SubjectCountOutputType, FASNone>::value,
+		FASNone,
+		std::conditional
+		<
+			std::is_same<SubjectCountOutputType, FASInteger>::value && std::is_same<AreaInputType, FASInteger>::value,
+			FASInteger,
+			FASFloat
+		>::type
+	>::type;
+
+
+
 	/// @name Given data
 	/// @{
 
@@ -70,7 +85,7 @@ class Point final
 	 * enough free area in the point.
 	 */
 	template<typename SubjectCountInputType, typename UnitType, typename PriceType>
-	bool const _addSubject(std::string const type_name, SubjectType<AreaOutputType, SubjectCountInputType, UnitType, PriceType> const& type, SubjectCountOutputType const count);
+	bool const _addSubject(std::string const type_name, SubjectType<AreaInputType, SubjectCountInputType, UnitType, PriceType> const& type, SubjectCountOutputType const count);
 
 	/**
 	 * @brief Remove a subject from the point
@@ -82,7 +97,7 @@ class Point final
 	 * @param count The number of subjects to be removed.
 	 */
 	template<typename SubjectCountInputType, typename UnitType, typename PriceType>
-	void _removeSubject(std::string const type_name, SubjectType<AreaOutputType, SubjectCountInputType, UnitType, PriceType> const& type, SubjectCountOutputType const count);
+	void _removeSubject(std::string const type_name, SubjectType<AreaInputType, SubjectCountInputType, UnitType, PriceType> const& type, SubjectCountOutputType const count);
 
 	/// @}
 
@@ -100,8 +115,8 @@ public:
 	Point(CoordinateType const x, CoordinateType const y, AreaInputType const area);
 	
 	/// Conversion constructor
-	template<typename Old_AreaOutputType, typename Old_SubjectCountOutputType>
-	Point(Point<CoordinateType, AreaInputType, Old_AreaOutputType, Old_SubjectCountOutputType> const &point);
+	template<typename Old_SubjectCountOutputType>
+	Point(Point<CoordinateType, AreaInputType, Old_SubjectCountOutputType> const &point);
 	
 	/// @}
 
@@ -157,10 +172,10 @@ public:
 
 
 
-template<typename CoordinateType, typename AreaInputType, typename AreaOutputType, typename SubjectCountOutputType>
+template<typename CoordinateType, typename AreaInputType, typename SubjectCountOutputType>
 template<typename SubjectCountInputType, typename UnitType, typename PriceType>
-bool const Point<CoordinateType, AreaInputType, AreaOutputType, SubjectCountOutputType>
-	::_addSubject(std::string const type_name, SubjectType<AreaOutputType, SubjectCountInputType, UnitType, PriceType> const& type, SubjectCountOutputType const count)
+bool const Point<CoordinateType, AreaInputType, SubjectCountOutputType>
+	::_addSubject(std::string const type_name, SubjectType<AreaInputType, SubjectCountInputType, UnitType, PriceType> const& type, SubjectCountOutputType const count)
 {
 	if (this->_area_free < type.area * count)
 		return false;
@@ -174,10 +189,10 @@ bool const Point<CoordinateType, AreaInputType, AreaOutputType, SubjectCountOutp
 
 
 
-template<typename CoordinateType, typename AreaInputType, typename AreaOutputType, typename SubjectCountOutputType>
+template<typename CoordinateType, typename AreaInputType, typename SubjectCountOutputType>
 template<typename SubjectCountInputType, typename UnitType, typename PriceType>
-void Point<CoordinateType, AreaInputType, AreaOutputType, SubjectCountOutputType>
-	::_removeSubject(std::string const type_name, SubjectType<AreaOutputType, SubjectCountInputType, UnitType, PriceType> const& type, SubjectCountOutputType const count)
+void Point<CoordinateType, AreaInputType, SubjectCountOutputType>
+	::_removeSubject(std::string const type_name, SubjectType<AreaInputType, SubjectCountInputType, UnitType, PriceType> const& type, SubjectCountOutputType const count)
 {
 	if (this->_subject_count.contains(type_name))
 	{
@@ -191,8 +206,8 @@ void Point<CoordinateType, AreaInputType, AreaOutputType, SubjectCountOutputType
 
 
 
-template<typename CoordinateType, typename AreaInputType, typename AreaOutputType, typename SubjectCountOutputType>
-Point<CoordinateType, AreaInputType, AreaOutputType, SubjectCountOutputType>
+template<typename CoordinateType, typename AreaInputType, typename SubjectCountOutputType>
+Point<CoordinateType, AreaInputType, SubjectCountOutputType>
 	::Point(CoordinateType const x, CoordinateType const y, AreaInputType const area)
 	: _x(x)
 	, _y(y)
@@ -202,10 +217,10 @@ Point<CoordinateType, AreaInputType, AreaOutputType, SubjectCountOutputType>
 
 
 
-template<typename CoordinateType, typename AreaInputType, typename AreaOutputType, typename SubjectCountOutputType>
-template<typename Old_AreaOutputType, typename Old_SubjectCountOutputType>
-Point<CoordinateType, AreaInputType, AreaOutputType, SubjectCountOutputType>
-	::Point(Point<CoordinateType, AreaInputType, Old_AreaOutputType, Old_SubjectCountOutputType> const &point)
+template<typename CoordinateType, typename AreaInputType, typename SubjectCountOutputType>
+template<typename Old_SubjectCountOutputType>
+Point<CoordinateType, AreaInputType, SubjectCountOutputType>
+	::Point(Point<CoordinateType, AreaInputType, Old_SubjectCountOutputType> const &point)
 	: _x(point._x)
 	, _y(point._y)
 	, _area_total(point._area_total)
@@ -218,25 +233,31 @@ Point<CoordinateType, AreaInputType, AreaOutputType, SubjectCountOutputType>
 
 
 
-#define DEFINE_GETTER(getterName, ReturnType, getter_var)                                                           \
-template<typename CoordinateType, typename AreaInputType, typename AreaOutputType, typename SubjectCountOutputType> \
-ReturnType const Point<CoordinateType, AreaInputType, AreaOutputType, SubjectCountOutputType>                       \
-    :: ## getterName (void) const                                                                                   \
-{                                                                                                                   \
-    return this-> ## getter_var;                                                                                    \
+#define DEFINE_GETTER(getterName, ReturnType, getter_var)                                  \
+template<typename CoordinateType, typename AreaInputType, typename SubjectCountOutputType> \
+ReturnType const Point<CoordinateType, AreaInputType, SubjectCountOutputType>              \
+    :: ## getterName (void) const                                                          \
+{                                                                                          \
+    return this-> ## getter_var;                                                           \
 }
 
 DEFINE_GETTER(x, CoordinateType, _x)
 DEFINE_GETTER(y, CoordinateType, _y)
 DEFINE_GETTER(areaTotal, AreaInputType, _area_total)
-DEFINE_GETTER(areaFree, AreaOutputType, _area_free)
+
+template<typename CoordinateType, typename AreaInputType, typename SubjectCountOutputType>
+Point<CoordinateType, AreaInputType, SubjectCountOutputType>::AreaOutputType const Point<CoordinateType, AreaInputType, SubjectCountOutputType>
+    ::areaFree(void) const
+{
+    return this->_area_free;
+}
 
 #undef DEFINE_GETTER
 
 
 
-template<typename CoordinateType, typename AreaInputType, typename AreaOutputType, typename SubjectCountOutputType>
-SubjectCountOutputType const Point<CoordinateType, AreaInputType, AreaOutputType, SubjectCountOutputType>
+template<typename CoordinateType, typename AreaInputType, typename SubjectCountOutputType>
+SubjectCountOutputType const Point<CoordinateType, AreaInputType, SubjectCountOutputType>
 	::countSubjects(void) const
 {
 	SubjectCountOutputType answer = 0;
@@ -247,8 +268,8 @@ SubjectCountOutputType const Point<CoordinateType, AreaInputType, AreaOutputType
 
 
 
-template<typename CoordinateType, typename AreaInputType, typename AreaOutputType, typename SubjectCountOutputType>
-SubjectCountOutputType const Point<CoordinateType, AreaInputType, AreaOutputType, SubjectCountOutputType>
+template<typename CoordinateType, typename AreaInputType, typename SubjectCountOutputType>
+SubjectCountOutputType const Point<CoordinateType, AreaInputType, SubjectCountOutputType>
 	::countSubjects(std::string const type_name) const
 {
 	return this->_subject_count.contains(type_name) ? this->_subject_count.at(type_name) : 0;

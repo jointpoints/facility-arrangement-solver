@@ -67,11 +67,17 @@ concept fas_numeric_or_none = fas_numeric<X> || std::same_as<X, FASNone>;
 
 
 
+// m[i]
 template<typename ValueType>
 using UnaryMap = std::map<std::string, ValueType>;
 
+// m[i][j]
 template<typename ValueType>
 using BinaryMap = std::map<std::string, UnaryMap<ValueType>>;
+
+// m[{i,j}][{u,v}]
+template<typename ValueType>
+using DoubleBinaryMap = std::map<std::pair<std::string, std::string>, std::map<std::pair<std::string, std::string>, ValueType>>;
 
 
 
