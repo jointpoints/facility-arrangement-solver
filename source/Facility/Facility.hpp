@@ -26,17 +26,17 @@ class Facility
 	/// @name Metadata
 	/// @{
 
-	/// Says whether the coordinates of points are integral
+	/// Says whether coordinates of points are integral
 	bool _coordinate_type_integral;
-	/// Says whether the area capacities of points are integral
+	/// Says whether area capacities of points are integral
 	bool _area_input_type_integral;
 	bool _area_output_type_integral;
-	/// Says whether the units of objects are integral
+	/// Says whether units of objects are integral
 	bool _unit_type_integral;
 	/// Says whether subjects are counted by integers
 	bool _subject_count_input_type_integral;
 	bool _subject_count_output_type_integral;
-	/// Says whether the prices are integral
+	/// Says whether prices are integral
 	bool _price_type_integral;
 	/// Says whether distances between points are integral
 	bool _distance_type_integral;

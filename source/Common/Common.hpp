@@ -77,7 +77,7 @@ using BinaryMap = std::map<std::string, UnaryMap<ValueType>>;
 
 // m[{i,j}][{u,v}]
 template<typename ValueType>
-using DoubleBinaryMap = std::map<std::pair<std::string, std::string>, std::map<std::pair<std::string, std::string>, ValueType>>;
+using DoublePairMap = std::map<std::pair<std::string, std::string>, std::map<std::pair<std::string, std::string>, ValueType>>;
 
 
 
