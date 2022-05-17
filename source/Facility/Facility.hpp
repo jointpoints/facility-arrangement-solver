@@ -26,6 +26,8 @@ class Facility
 	/// @name Metadata
 	/// @{
 
+	/// Says whether distances between points are integral
+	bool _distance_type_integral;
 	/// Says whether coordinates of points are integral
 	bool _coordinate_type_integral;
 	/// Says whether area capacities of points are integral
@@ -38,8 +40,6 @@ class Facility
 	bool _subject_count_output_type_integral;
 	/// Says whether prices are integral
 	bool _price_type_integral;
-	/// Says whether distances between points are integral
-	bool _distance_type_integral;
 
 	/// @}
 

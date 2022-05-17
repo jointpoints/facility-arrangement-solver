@@ -115,8 +115,8 @@ public:
 	Point(CoordinateType const x, CoordinateType const y, AreaInputType const area);
 	
 	/// Conversion constructor
-	template<typename Old_SubjectCountOutputType>
-	Point(Point<CoordinateType, AreaInputType, Old_SubjectCountOutputType> const &point);
+	template<typename Old_CoordinateType, typename Old_AreaInputType, typename Old_SubjectCountOutputType>
+	Point(Point<Old_CoordinateType, Old_AreaInputType, Old_SubjectCountOutputType> const &point);
 	
 	/// @}
 
@@ -218,9 +218,9 @@ Point<CoordinateType, AreaInputType, SubjectCountOutputType>
 
 
 template<typename CoordinateType, typename AreaInputType, typename SubjectCountOutputType>
-template<typename Old_SubjectCountOutputType>
+template<typename Old_CoordinateType, typename Old_AreaInputType, typename Old_SubjectCountOutputType>
 Point<CoordinateType, AreaInputType, SubjectCountOutputType>
-	::Point(Point<CoordinateType, AreaInputType, Old_SubjectCountOutputType> const &point)
+	::Point(Point<Old_CoordinateType, Old_AreaInputType, Old_SubjectCountOutputType> const &point)
 	: _x(point._x)
 	, _y(point._y)
 	, _area_total(point._area_total)

@@ -36,11 +36,12 @@
  * @note Intended to only be used within FacilityLayout, FacilityArrangement, and
  * FASolver.
  */
-template<typename DistanceType>
+template<typename DistanceType, typename CoordinateType, typename AreaInputType, typename SubjectCountOutputType>
+	requires fas_numeric<DistanceType>
 class PlanarMetric
 {
 	/// Stored Callable object to measure distances
-	std::shared_ptr<void> dist;
+	CORE_FUNCTION_TYPE dist;
 
 
 
@@ -63,7 +64,7 @@ public:
 	 *                          \c CORE_FUNCTION_TYPE cast to `void*`.
 	 */
 	explicit inline
-	PlanarMetric(void *distance_function);
+	PlanarMetric(CORE_FUNCTION_TYPE distance_function);
 
 	/**
 	 * @brief Destructor
@@ -90,9 +91,9 @@ public:
 	 * @returns The distance between \c point1 and \c point2 as an instance of
 	 * \c METRIC_RETURN_TYPE.
 	 */
-	template<typename CoordinateType, typename AreaInputType, typename SubjectCountOutputType>
+	template<typename Op_CoordinateType, typename Op_AreaInputType, typename Op_SubjectCountOutputType>
 	inline
-	DistanceType const operator()(Point<CoordinateType, AreaInputType, SubjectCountOutputType> const& point1, Point<CoordinateType, AreaInputType, SubjectCountOutputType> const& point2) const;
+	DistanceType const operator()(Point<Op_CoordinateType, Op_AreaInputType, Op_SubjectCountOutputType> const& point1, Point<Op_CoordinateType, Op_AreaInputType, Op_SubjectCountOutputType> const& point2) const;
 
 	/// @}
 };
@@ -117,8 +118,8 @@ public:
 
 
 
-template<typename DistanceType>
-PlanarMetric<DistanceType>::PlanarMetric(void *distance_function)
+template<typename DistanceType, typename CoordinateType, typename AreaInputType, typename SubjectCountOutputType>
+PlanarMetric<DistanceType, CoordinateType, AreaInputType, SubjectCountOutputType>::PlanarMetric(CORE_FUNCTION_TYPE distance_function)
 	: dist(distance_function)
 {}
 
@@ -142,11 +143,12 @@ PlanarMetric<DistanceType>::PlanarMetric(void *distance_function)
 
 
 
-template<typename DistanceType>
-template<typename CoordinateType, typename AreaInputType, typename SubjectCountOutputType>
-DistanceType const PlanarMetric<DistanceType>::operator()(Point<CoordinateType, AreaInputType, SubjectCountOutputType> const &point1, Point<CoordinateType, AreaInputType, SubjectCountOutputType> const &point2) const
+template<typename DistanceType, typename CoordinateType, typename AreaInputType, typename SubjectCountOutputType>
+template<typename Op_CoordinateType, typename Op_AreaInputType, typename Op_SubjectCountOutputType>
+DistanceType const PlanarMetric<DistanceType, CoordinateType, AreaInputType, SubjectCountOutputType>
+	::operator()(Point<Op_CoordinateType, Op_AreaInputType, Op_SubjectCountOutputType> const &point1, Point<Op_CoordinateType, Op_AreaInputType, Op_SubjectCountOutputType> const &point2) const
 {
-	return *reinterpret_cast<CORE_FUNCTION_TYPE*>(this->dist.get())(point1, point2);
+	return this->dist(point1, point2);
 }
 
 
@@ -208,7 +210,7 @@ namespace metric
  * metric.
  */
 template<uint8_t order, typename CoordinateType, typename AreaInputType, typename SubjectCountOutputType, typename DistanceType = FASFloat>
-PlanarMetric<DistanceType> const Minkowski(UnaryMap<Point<CoordinateType, AreaInputType, SubjectCountOutputType>> const& points)
+PlanarMetric<DistanceType, CoordinateType, AreaInputType, SubjectCountOutputType> const Minkowski(UnaryMap<Point<CoordinateType, AreaInputType, SubjectCountOutputType>> const& points)
 {
 	CORE_FUNCTION_TYPE* dist = new CORE_FUNCTION_TYPE
 	([order](Point<CoordinateType, AreaInputType, SubjectCountOutputType> const& point1, Point<CoordinateType, AreaInputType, SubjectCountOutputType> const& point2)
@@ -220,7 +222,7 @@ PlanarMetric<DistanceType> const Minkowski(UnaryMap<Point<CoordinateType, AreaIn
 }
 // If the order is 1, use simpler formulae
 template<typename CoordinateType, typename AreaInputType, typename SubjectCountOutputType>
-PlanarMetric<CoordinateType> const Minkowski<1, CoordinateType, AreaInputType, SubjectCountOutputType, CoordinateType>(UnaryMap<Point<FASInteger, AreaInputType, SubjectCountOutputType>> const& points)
+PlanarMetric<CoordinateType, CoordinateType, AreaInputType, SubjectCountOutputType> const Minkowski<1, CoordinateType, AreaInputType, SubjectCountOutputType, CoordinateType>(UnaryMap<Point<FASInteger, AreaInputType, SubjectCountOutputType>> const& points)
 {
 	CORE_FUNCTION_TYPE* dist = new CORE_FUNCTION_TYPE
 	([order](Point<CoordinateType, AreaInputType, SubjectCountOutputType> const& point1, Point<CoordinateType, AreaInputType, SubjectCountOutputType> const& point2)
@@ -232,7 +234,7 @@ PlanarMetric<CoordinateType> const Minkowski<1, CoordinateType, AreaInputType, S
 }
 // If the order is infinity, use simpler formulae
 template<typename CoordinateType, typename AreaInputType, typename SubjectCountOutputType>
-PlanarMetric<CoordinateType> const Minkowski<oo, CoordinateType, AreaInputType, SubjectCountOutputType, CoordinateType>(UnaryMap<Point<FASInteger, AreaInputType, SubjectCountOutputType>> const& points)
+PlanarMetric<CoordinateType, CoordinateType, AreaInputType, SubjectCountOutputType> const Minkowski<oo, CoordinateType, AreaInputType, SubjectCountOutputType, CoordinateType>(UnaryMap<Point<FASInteger, AreaInputType, SubjectCountOutputType>> const& points)
 {
 	CORE_FUNCTION_TYPE* dist = new CORE_FUNCTION_TYPE
 	([order](Point<CoordinateType, AreaInputType, SubjectCountOutputType> const& point1, Point<CoordinateType, AreaInputType, SubjectCountOutputType> const& point2)
