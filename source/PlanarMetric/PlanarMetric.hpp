@@ -12,7 +12,6 @@
 #include "../Common/Common.hpp"
 #include "../Point/Point.hpp"
 #include <functional> // std::function
-#include <cmath>
 
 #define CORE_FUNCTION_TYPE std::function<DistanceType(Point<CoordinateType, AreaInputType, SubjectCountOutputType> const &, Point<CoordinateType, AreaInputType, SubjectCountOutputType> const &)>
 
@@ -85,11 +84,11 @@ public:
 	 *
 	 * Makes a call of the distance function that was passed as the constructor argument.
 	 * 
-	 * @param point1 One Point from the 2D plane.
-	 * @param point2 Another Point from the 2D plane.
+	 * @param point1 One point from the 2D plane.
+	 * @param point2 Another point from the 2D plane.
 	 * 
 	 * @returns The distance between \c point1 and \c point2 as an instance of
-	 * \c METRIC_RETURN_TYPE.
+	 * \c DistanceType.
 	 */
 	template<typename Op_CoordinateType, typename Op_AreaInputType, typename Op_SubjectCountOutputType>
 	inline
@@ -185,6 +184,19 @@ namespace metric
 
 
 
+template<uint8_t order, typename CoordinateType>
+struct MinkowskiDistanceTypeSelector {using type = FASFloat;};
+
+template<typename CoordinateType>
+struct MinkowskiDistanceTypeSelector<1, CoordinateType> {using type = CoordinateType;};
+
+template<typename CoordinateType>
+struct MinkowskiDistanceTypeSelector<oo, CoordinateType> {using type = CoordinateType;};
+
+
+
+
+
 /**
  * @brief Get an instance of Minkowski metric
  *
@@ -209,40 +221,39 @@ namespace metric
  * @returns A constant PlanarMetric instance ready to use for computation of Minkowski
  * metric.
  */
-template<uint8_t order, typename CoordinateType, typename AreaInputType, typename SubjectCountOutputType, typename DistanceType = FASFloat>
-PlanarMetric<DistanceType, CoordinateType, AreaInputType, SubjectCountOutputType> const Minkowski(UnaryMap<Point<CoordinateType, AreaInputType, SubjectCountOutputType>> const& points)
+template<uint8_t order, typename CoordinateType, typename AreaInputType, typename SubjectCountOutputType, typename DistanceType = MinkowskiDistanceTypeSelector<order, CoordinateType>::type>
+PlanarMetric<DistanceType, CoordinateType, AreaInputType, SubjectCountOutputType> const Minkowski
+(
+	UnaryMap<Point<CoordinateType, AreaInputType, SubjectCountOutputType>> const& points
+)
 {
-	CORE_FUNCTION_TYPE* dist = new CORE_FUNCTION_TYPE
-	([order](Point<CoordinateType, AreaInputType, SubjectCountOutputType> const& point1, Point<CoordinateType, AreaInputType, SubjectCountOutputType> const& point2)
-	{
-		return std::pow(std::pow(std::abs(point1.x - point2.x), order) + std::pow(std::abs(point1.y - point2.y), order), 1.L / order);
-	});
-
-	return PlanarMetric<DistanceType>(reinterpret_cast<void *>(dist));
-}
-// If the order is 1, use simpler formulae
-template<typename CoordinateType, typename AreaInputType, typename SubjectCountOutputType>
-PlanarMetric<CoordinateType, CoordinateType, AreaInputType, SubjectCountOutputType> const Minkowski<1, CoordinateType, AreaInputType, SubjectCountOutputType, CoordinateType>(UnaryMap<Point<FASInteger, AreaInputType, SubjectCountOutputType>> const& points)
-{
-	CORE_FUNCTION_TYPE* dist = new CORE_FUNCTION_TYPE
-	([order](Point<CoordinateType, AreaInputType, SubjectCountOutputType> const& point1, Point<CoordinateType, AreaInputType, SubjectCountOutputType> const& point2)
-	{
-		return std::abs(point1.x - point2.x) + std::abs(point1.y - point2.y);
-	});
-
-	return PlanarMetric<CoordinateType>(reinterpret_cast<void *>(dist));
-}
-// If the order is infinity, use simpler formulae
-template<typename CoordinateType, typename AreaInputType, typename SubjectCountOutputType>
-PlanarMetric<CoordinateType, CoordinateType, AreaInputType, SubjectCountOutputType> const Minkowski<oo, CoordinateType, AreaInputType, SubjectCountOutputType, CoordinateType>(UnaryMap<Point<FASInteger, AreaInputType, SubjectCountOutputType>> const& points)
-{
-	CORE_FUNCTION_TYPE* dist = new CORE_FUNCTION_TYPE
-	([order](Point<CoordinateType, AreaInputType, SubjectCountOutputType> const& point1, Point<CoordinateType, AreaInputType, SubjectCountOutputType> const& point2)
-	{
-		return return std::max(std::abs(point1.x - point2.x), std::abs(point1.y - point2.y));
-	});
-
-	return PlanarMetric<CoordinateType>(reinterpret_cast<void *>(dist));
+	// If order is 1, use simpler formula
+	if consteval(order == 1)
+		return PlanarMetric(CORE_FUNCTION_TYPE
+		(
+			[order](Point<CoordinateType, AreaInputType, SubjectCountOutputType> const& point1, Point<CoordinateType, AreaInputType, SubjectCountOutputType> const& point2)
+			{
+				return fasAbs(point1.x() - point2.x()) + fasAbs(point1.y() - point2.y());
+			}
+		));
+	// If order is infinity, use simpler formula
+	else if consteval(order == oo)
+		return PlanarMetric(CORE_FUNCTION_TYPE
+		(
+			[order](Point<CoordinateType, AreaInputType, SubjectCountOutputType> const& point1, Point<CoordinateType, AreaInputType, SubjectCountOutputType> const& point2)
+			{
+				return std::max(fasAbs(point1.x() - point2.x()), fasAbs(point1.y() - point2.y()));
+			}
+		));
+	// Otherwise, use the general formula
+	else
+		return PlanarMetric(CORE_FUNCTION_TYPE
+		(
+			[order](Point<CoordinateType, AreaInputType, SubjectCountOutputType> const& point1, Point<CoordinateType, AreaInputType, SubjectCountOutputType> const& point2)
+			{
+				return std::pow(std::pow(fasAbs(point1.x() - point2.x()), order) + std::pow(fasAbs(point1.y() - point2.y()), order), 1.L / order);
+			}
+		));
 }
 
 

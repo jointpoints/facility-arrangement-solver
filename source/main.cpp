@@ -3,7 +3,7 @@
  * @author JointPoints, 2022, github.com/jointpoints
  */
 //#include "FASolver/FASolver.hpp"
-#include "PlanarMetric/PlanarMetric.hpp"
+#include "Facility/Facility.hpp"
 
 
 
@@ -11,6 +11,9 @@
 
 int main(void)
 {
+	auto points = points::grid(3, 3, (FASInteger)1, (FASInteger)5);
+	auto m1 = metric::Minkowski<1>(points);
+	Facility facility(points, m1);
 	/*auto point_map = points::grid(3, 3, 1, 5U);
 	PlanarMetric m1 = metric::Minkowski(1, point_map);
 	PlanarMetric m2 = metric::Minkowski(2, point_map);

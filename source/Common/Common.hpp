@@ -13,6 +13,7 @@
 #include <cstdint>
 #include <memory>
 #include <string>
+#include <cmath>
 #include <map>
 
 
@@ -246,6 +247,46 @@ inline
 std::basic_ostream<X> & operator<<(std::basic_ostream<X> &stream, FASFloat const &fas_float)
 {
 	return stream << fas_float.core;
+}
+
+
+
+
+
+
+
+
+
+
+// Wrappers for FAS numbers to communicate with std functions
+
+
+
+
+
+
+
+
+
+
+template<typename FASNumber>
+	requires fas_numeric<FASNumber>
+struct FASOuterReturnTypeSelector {using type = FASNumber;};
+
+template<>
+struct FASOuterReturnTypeSelector<FASFloat> {using type = decltype(FASFloat::core);};
+
+
+
+
+
+template<typename FASNumber>
+FASOuterReturnTypeSelector<FASNumber>::type fasAbs(FASNumber const& n1, FASNumber const& n2)
+{
+	if consteval(std::is_same<FASNumber, FASInteger>::value)
+		return std::abs(n1, n2);
+	else
+		return std::abs(n1.core, n2.core);
 }
 
 
