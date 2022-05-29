@@ -69,6 +69,17 @@ class Point final
 
 
 
+	/// @name Constructors & destructors
+	/// @{
+
+	/// Conversion constructor
+	template<typename Old_CoordinateType, typename Old_AreaInputType, typename Old_SubjectCountOutputType>
+	Point(Point<Old_CoordinateType, Old_AreaInputType, Old_SubjectCountOutputType> const &point);
+
+	/// @}
+
+
+
 	/// @name Modifiers
 	/// @{
 
@@ -113,10 +124,6 @@ public:
 	/// By-values constructor
 	explicit
 	Point(CoordinateType const x, CoordinateType const y, AreaInputType const area);
-	
-	/// Conversion constructor
-	template<typename Old_CoordinateType, typename Old_AreaInputType, typename Old_SubjectCountOutputType>
-	Point(Point<Old_CoordinateType, Old_AreaInputType, Old_SubjectCountOutputType> const &point);
 	
 	/// @}
 

@@ -64,6 +64,8 @@ Logger::Logger(std::string const path, int& status_code) noexcept
 	this->warning_callback.reset(new LoggerOStream(this, &Logger::warning));
 	this->error_callback.reset(new LoggerOStream(this, &Logger::error));
 
+	this->info("Log started.");
+
 	status_code = FASOLVER_LOGGER_STATUS_OK;
 
 	return;
@@ -83,7 +85,10 @@ Logger::Logger(std::basic_ostream<char8_t>& output_stream, int& status_code) noe
 	this->warning_callback.reset(new LoggerOStream(this, &Logger::warning));
 	this->error_callback.reset(new LoggerOStream(this, &Logger::error));
 
+	this->info("Log started.");
+
 	status_code = FASOLVER_LOGGER_STATUS_OK;
+
 	return;
 }
 
@@ -93,8 +98,14 @@ Logger::Logger(std::basic_ostream<char8_t>& output_stream, int& status_code) noe
 
 Logger::~Logger(void)
 {
+	try
+	{
+		this->info("Log finished.");
+	}
+	catch (...) {}
 	if (this->output_stream.is_open())
 		this->output_stream.close();
+	
 	return;
 }
 

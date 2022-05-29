@@ -26,7 +26,7 @@
  * @class PlanarMetric
  * @brief Functor to measure distances between points in 2D
  *
- * This functor (a class whose objects provide an interface similar to Callable) enables
+ * This functor (a class that provides a Callable interface) enables
  * the computation of distance between any two points from two-dimensional space with
  * coordinates of the specified in advance type. Even though it is called \e metric,
  * distance functions are not really expected to be metrics in the mathematical sense of
