@@ -14,6 +14,9 @@ int main(void)
 	auto points = points::grid(3, 3, (FASInteger)1, (FASInteger)5);
 	auto m1 = metric::Minkowski<1>(points);
 	Facility facility(points, m1);
+	UnaryMap<SubjectType<FASInteger, FASInteger, FASInteger, FASFloat>> subject_types{{"A", {0, 25, 2, 4, 400.L}}};
+	BinaryMap<FASInteger> total_flows{{"A", { {"A", 0} }}};
+	facility.arrange(subject_types, total_flows);
 	/*auto point_map = points::grid(3, 3, 1, 5U);
 	PlanarMetric m1 = metric::Minkowski(1, point_map);
 	PlanarMetric m2 = metric::Minkowski(2, point_map);

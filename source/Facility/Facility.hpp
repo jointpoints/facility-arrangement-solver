@@ -89,7 +89,7 @@ class Facility
 	/// Says whether subjects are not counted at all
 	bool _subject_count_output_type_none;
 	/// Says whether units of objects are integral
-	bool _unit_type_integral;
+	bool _unit_output_type_integral;
 
 	/// @}
 
@@ -103,7 +103,7 @@ class Facility
 	/// A functor to measure distances between points
 	std::unique_ptr<void> _distance;
 	/// Flows between points
-	std::unique_ptr<void> _flow;
+	std::unique_ptr<void> _flows;
 
 	/// @}
 
@@ -191,17 +191,17 @@ public:
 	 */
 	template
 	<
-		typename AreaInputType,
+		typename Subj_AreaInputType,
 		typename SubjectCountInputType,
 		typename UnitInputType,
-		typename UnitOutputType,
 		typename PriceType
 	>
 	void arrange
 	(
-		UnaryMap<SubjectType<AreaInputType, SubjectCountInputType, UnitInputType, PriceType>> const &subject_types,
-		BinaryMap<UnitOutputType> const &total_flows,
-		FacilityArrangementStrategy const strategy = Facility::strategy_blocks.CPLEX
+		UnaryMap<SubjectType<Subj_AreaInputType, SubjectCountInputType, UnitInputType, PriceType>> const &subject_types,
+		BinaryMap<UnitInputType> const &total_flows,
+		FacilityArrangementStrategy const strategy = Facility::strategy_blocks.CPLEX,
+		bool const warm_start = false
 	);
 
 	/// @}
@@ -234,13 +234,13 @@ Facility::Facility
 	PlanarMetric<DistanceType> const &distance
 )
 {
-	this->_points.reset(reinterpret_cast<void *>(new UnaryMap<Point<CoordinateType, AreaInputType, SubjectCountOutputType>>(points)));
+	this->_points.reset(static_cast<void *>(new UnaryMap<Point<CoordinateType, AreaInputType, SubjectCountOutputType>>(points)));
 	this->_coordinate_type_integral = std::is_same<CoordinateType, FASInteger>::value;
 	this->_area_input_type_integral = std::is_same<AreaInputType, FASInteger>::value;
 	this->_subject_count_output_type_integral = std::is_same<SubjectCountOutputType, FASInteger>::value;
 	this->_subject_count_output_type_none = std::is_same<SubjectCountOutputType, FASNone>::value;
 
-	this->_distance.reset(reinterpret_cast<void *>(new PlanarMetric(distance)));
+	this->_distance.reset(static_cast<void *>(new PlanarMetric(distance)));
 	this->_distance_type_integral = std::is_same<DistanceType, FASInteger>::value;
 
 	return;
@@ -252,17 +252,17 @@ Facility::Facility
 
 template
 <
-	typename AreaInputType,
+	typename Subj_AreaInputType,
 	typename SubjectCountInputType,
 	typename UnitInputType,
-	typename UnitOutputType,
 	typename PriceType
 >
 void Facility::arrange
 (
-	UnaryMap<SubjectType<AreaInputType, SubjectCountInputType, UnitInputType, PriceType>> const &subject_types,
-	BinaryMap<UnitOutputType> const &total_flows,
-	FacilityArrangementStrategy const strategy
+	UnaryMap<SubjectType<Subj_AreaInputType, SubjectCountInputType, UnitInputType, PriceType>> const &subject_types,
+	BinaryMap<UnitInputType> const &total_flows,
+	FacilityArrangementStrategy const strategy,
+	bool const warm_start
 )
 {
 	// Start logging
@@ -271,26 +271,49 @@ void Facility::arrange
 	if (logger_status_code != FASOLVER_LOGGER_STATUS_OK)
 		throw 1; // TODO
 	
-	// Create interpretation of strategy
-	std::map
-	<
-		FacilityArrangementStrategy::Algorithm,
-		void (*)
+	// Reestablish types
+	RUNTIME_CONDITIONAL(DistanceType, this->_distance_type_integral, FASInteger, FASFloat,
+	RUNTIME_CONDITIONAL(CoordinateType, this->_coordinate_type_integral, FASInteger, FASFloat,
+	RUNTIME_CONDITIONAL(AreaInputType, this->_area_input_type_integral, FASInteger, FASFloat,
+	RUNTIME_CONDITIONAL(SubjectCountOutputType, this->_subject_count_output_type_integral, FASInteger, FASFloat,
+		// Within the context of defined types, define the rest of the types
+		using UnitOutputType = std::conditional
+		<
+			std::is_same<SubjectCountOutputType, FASInteger>::value && std::is_same<UnitInputType, FASInteger>::value,
+			FASInteger,
+			FASFloat
+		>::type;
+		using FacilityArrangementAlgorithm = void (*)
 		(
-			Facility *,
-			UnaryMap<SubjectType<AreaInputType, SubjectCountInputType, UnitType, PriceType>> const &,
-			BinaryMap<UnitType> const &,
+			UnaryMap<Point<CoordinateType, AreaInputType, SubjectCountOutputType>> &,
+			PlanarMetric<DistanceType> const &,
+			BinaryPairMap<UnitOutputType> &,
+			UnaryMap<SubjectType<AreaInputType, SubjectCountInputType, UnitInputType, PriceType>> const &,
+			BinaryMap<UnitInputType> const &,
 			Logger const &,
 			bool const
-		)
-	> const arrangement_algorithm
-	{
-		{FacilityArrangementStrategy::Algorithm::FASTRAT_CPLEX, &facilityArrangementAlgorithm_CPLEX}
-	};
+		);
 
-	// Execute strategy
-	for (auto const &strategy_step : strategy.sequence)
-		*arrangement_algorithm.at(strategy_step)(this, subject_types, total_flows, logger, true);
+		// Define the interpretation of strategy blocks
+		std::map<FacilityArrangementStrategy::Algorithm, FacilityArrangementAlgorithm> const algorithms
+		{
+			{FacilityArrangementStrategy::Algorithm::FASTRAT_CPLEX, &facilityArrangementAlgorithm_CPLEX<DistanceType, CoordinateType, AreaInputType, SubjectCountInputType, SubjectCountOutputType, UnitInputType, UnitOutputType, PriceType>}
+		};
+
+		// Reinterpret the facility data
+		auto *explicit_points = static_cast<UnaryMap<Point<CoordinateType, AreaInputType, SubjectCountOutputType>> *>(this->_points.get());
+		auto *explicit_distance = static_cast<PlanarMetric<DistanceType> *>(this->_distance.get());
+		auto *explicit_flows = static_cast<BinaryPairMap<UnitOutputType> *>(this->_flows.get());
+
+		// Convert subject types so that their area type coincides with the one of the facility
+		UnaryMap<SubjectType<AreaInputType, SubjectCountInputType, UnitInputType, PriceType>> converted_subject_types;
+		for (auto const &[type_name, type] : subject_types)
+			converted_subject_types[type_name] = type;
+		
+		// Execute the arrangement strategy
+		for (auto step_it = strategy.sequence.begin(); step_it != strategy.sequence.end(); ++step_it)
+			*algorithms.at(*step_it)(*explicit_points, *explicit_distance, *explicit_flows, converted_subject_types, total_flows, logger, step_it != strategy.sequence.begin() || warm_start);
+	))))
 }
 
 

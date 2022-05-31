@@ -18,13 +18,6 @@
 
 
 
-// A forward declaration of Facility
-class Facility;
-
-
-
-
-
 template
 <
 	typename DistanceType,
@@ -38,7 +31,9 @@ template
 >
 void facilityArrangementAlgorithm_CPLEX
 (
-	Facility *const facility,
+	UnaryMap<Point<CoordinateType, AreaInputType, SubjectCountOutputType>> &points,
+	PlanarMetric<DistanceType> const &distance,
+	BinaryPairMap<UnitOutputType> &flows,
 	UnaryMap<SubjectType<AreaInputType, SubjectCountInputType, UnitInputType, PriceType>> const &subject_types,
 	BinaryMap<UnitOutputType> const &total_flows,
 	Logger const &logger,
@@ -70,7 +65,11 @@ void facilityArrangementAlgorithm_CPLEX
 	BinaryMap<CplexUnitTypeVar> cplex_var_produced;
 	// Number of subjects (cplex_var_subject_count[u][i] = number of subjects of type i
 	// located in u)
-	BinaryMap<>
+	//BinaryMap<>
+
+	cplex_environment.end();
+
+	return;
 }
 
 
