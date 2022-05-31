@@ -23,16 +23,14 @@
  * production chain or, in other words, are indistinguishable from one another from the
  * functional point of view.
  */
-template<typename AreaInputType, typename SubjectCountInputType, typename UnitType, typename PriceType>
-	requires fas_numeric<AreaInputType> && fas_numeric<SubjectCountInputType> && fas_numeric<UnitType> && fas_numeric<UnitType>
+template<typename AreaInputType, typename SubjectCountInputType, typename UnitInputType, typename PriceType>
+	requires fas_numeric<AreaInputType> && fas_numeric<SubjectCountInputType> && fas_numeric<UnitInputType> && fas_numeric<PriceType>
 struct SubjectType final
 {
 	/// Input capacity of a single subject of the type
-	UnitType in_capacity;
+	UnitInputType in_capacity;
 	/// Output capacity of a single subject of the type
-	UnitType out_capacity;
-	/// The number of objects all subjects of the type \b must produce
-	UnitType production_target;
+	UnitInputType out_capacity;
 	/// Area occupied by a single subject of the type
 	AreaInputType area;
 	/// The number of subjects initially available for the placement

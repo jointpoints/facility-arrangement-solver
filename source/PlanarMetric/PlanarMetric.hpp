@@ -13,7 +13,7 @@
 #include "../Point/Point.hpp"
 #include <functional> // std::function
 
-#define CORE_FUNCTION_TYPE std::function<DistanceType(Point<CoordinateType, AreaInputType, SubjectCountOutputType> const &, Point<CoordinateType, AreaInputType, SubjectCountOutputType> const &)>
+#define CORE_FUNCTION_TYPE std::function<DistanceType(FASFloat const &, FASFloat const &, FASFloat const &, FASFloat const &)>
 
 /// Infinity to use as metrics parameter
 #define oo (uint8_t)0
@@ -35,7 +35,7 @@
  * @note Intended to only be used within FacilityLayout, FacilityArrangement, and
  * FASolver.
  */
-template<typename DistanceType, typename CoordinateType, typename AreaInputType, typename SubjectCountOutputType>
+template<typename DistanceType>
 	requires fas_numeric<DistanceType>
 class PlanarMetric
 {
@@ -117,8 +117,8 @@ public:
 
 
 
-template<typename DistanceType, typename CoordinateType, typename AreaInputType, typename SubjectCountOutputType>
-PlanarMetric<DistanceType, CoordinateType, AreaInputType, SubjectCountOutputType>::PlanarMetric(CORE_FUNCTION_TYPE distance_function)
+template<typename DistanceType>
+PlanarMetric<DistanceType>::PlanarMetric(CORE_FUNCTION_TYPE distance_function)
 	: dist(distance_function)
 {}
 
@@ -142,12 +142,12 @@ PlanarMetric<DistanceType, CoordinateType, AreaInputType, SubjectCountOutputType
 
 
 
-template<typename DistanceType, typename CoordinateType, typename AreaInputType, typename SubjectCountOutputType>
+template<typename DistanceType>
 template<typename Op_CoordinateType, typename Op_AreaInputType, typename Op_SubjectCountOutputType>
-DistanceType const PlanarMetric<DistanceType, CoordinateType, AreaInputType, SubjectCountOutputType>
+DistanceType const PlanarMetric<DistanceType>
 	::operator()(Point<Op_CoordinateType, Op_AreaInputType, Op_SubjectCountOutputType> const &point1, Point<Op_CoordinateType, Op_AreaInputType, Op_SubjectCountOutputType> const &point2) const
 {
-	return this->dist(point1, point2);
+	return this->dist(point1.x(), point1.y(), point2.x(), point2.y());
 }
 
 
@@ -222,7 +222,7 @@ struct MinkowskiDistanceTypeSelector<oo, CoordinateType> {using type = Coordinat
  * metric.
  */
 template<uint8_t order, typename CoordinateType, typename AreaInputType, typename SubjectCountOutputType, typename DistanceType = MinkowskiDistanceTypeSelector<order, CoordinateType>::type>
-PlanarMetric<DistanceType, CoordinateType, AreaInputType, SubjectCountOutputType> const Minkowski
+PlanarMetric<DistanceType> const Minkowski
 (
 	UnaryMap<Point<CoordinateType, AreaInputType, SubjectCountOutputType>> const& points
 )
@@ -231,27 +231,27 @@ PlanarMetric<DistanceType, CoordinateType, AreaInputType, SubjectCountOutputType
 	if consteval(order == 1)
 		return PlanarMetric(CORE_FUNCTION_TYPE
 		(
-			[order](Point<CoordinateType, AreaInputType, SubjectCountOutputType> const& point1, Point<CoordinateType, AreaInputType, SubjectCountOutputType> const& point2)
+			[order](FASFloat const &point1_x, FASFloat const &point1_y, FASFloat const &point2_x, FASFloat const &point2_y)
 			{
-				return fasAbs(point1.x() - point2.x()) + fasAbs(point1.y() - point2.y());
+				return fasAbs(point1_x - point2_x) + fasAbs(point1_y - point2_y);
 			}
 		));
 	// If order is infinity, use simpler formula
 	else if consteval(order == oo)
 		return PlanarMetric(CORE_FUNCTION_TYPE
 		(
-			[order](Point<CoordinateType, AreaInputType, SubjectCountOutputType> const& point1, Point<CoordinateType, AreaInputType, SubjectCountOutputType> const& point2)
+			[order](FASFloat const &point1_x, FASFloat const &point1_y, FASFloat const &point2_x, FASFloat const &point2_y)
 			{
-				return std::max(fasAbs(point1.x() - point2.x()), fasAbs(point1.y() - point2.y()));
+				return std::max(fasAbs(point1_x - point2_x), fasAbs(point1_y - point2_y));
 			}
 		));
 	// Otherwise, use the general formula
 	else
 		return PlanarMetric(CORE_FUNCTION_TYPE
 		(
-			[order](Point<CoordinateType, AreaInputType, SubjectCountOutputType> const& point1, Point<CoordinateType, AreaInputType, SubjectCountOutputType> const& point2)
+			[order](FASFloat const &point1_x, FASFloat const &point1_y, FASFloat const &point2_x, FASFloat const &point2_y)
 			{
-				return std::pow(std::pow(fasAbs(point1.x() - point2.x()), order) + std::pow(fasAbs(point1.y() - point2.y()), order), 1.L / order);
+				return std::pow(std::pow(fasAbs(point1_x - point2_x), order) + std::pow(fasAbs(point1_y - point2_y), order), 1.L / order);
 			}
 		));
 }

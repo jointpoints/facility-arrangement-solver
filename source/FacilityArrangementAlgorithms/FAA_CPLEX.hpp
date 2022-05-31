@@ -25,14 +25,24 @@ class Facility;
 
 
 
-template<typename AreaInputType, typename SubjectCountInputType, typename UnitType, typename PriceType>
+template
+<
+	typename DistanceType,
+	typename CoordinateType,
+	typename AreaInputType,
+	typename SubjectCountInputType,
+	typename SubjectCountOutputType,
+	typename UnitInputType,
+	typename UnitOutputType,
+	typename PriceType
+>
 void facilityArrangementAlgorithm_CPLEX
 (
-	Facility *facility,
-	UnaryMap<SubjectType<AreaInputType, SubjectCountInputType, UnitType, PriceType>> const &subject_types,
-	BinaryMap<UnitType> const &total_flows,
+	Facility *const facility,
+	UnaryMap<SubjectType<AreaInputType, SubjectCountInputType, UnitInputType, PriceType>> const &subject_types,
+	BinaryMap<UnitOutputType> const &total_flows,
 	Logger const &logger,
-	bool const first_step
+	bool const warm_start = false
 )
 {
 	// Define types of variables based on parameters

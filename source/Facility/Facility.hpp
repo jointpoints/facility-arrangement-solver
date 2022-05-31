@@ -19,54 +19,6 @@
 
 
 
-class FacilityArrangementStrategy
-{
-	/// Possible arrangement algorithms
-	static
-	enum Algorithm
-	{
-		FASTRAT_CPLEX,
-		FASTRAT_GMC
-	};
-
-	/// Sequence of algorithms
-	std::vector<Algorithm> sequence;
-
-
-
-	/// @name Constructors & destructors
-	/// @{
-
-	/// Not default-constructable
-	FacilityArrangementStrategy(void) = delete;
-
-	/// By-value constructor
-	FacilityArrangementStrategy(Algorithm const algorithm);
-
-	/// By-value constructor
-	FacilityArrangementStrategy(std::vector<Algorithm> const &sequence);
-
-	/// @}
-
-
-
-public:
-	/// @name Operators
-	/// @{
-
-	FacilityArrangementStrategy const operator>>(FacilityArrangementStrategy const &other);
-
-	/// @}
-
-
-
-friend Facility;
-};
-
-
-
-
-
 /**
  * @class Facility
  * @brief Facility layout and arrangement
@@ -77,6 +29,52 @@ friend Facility;
  */
 class Facility
 {
+	class FacilityArrangementStrategy
+	{
+		/// Possible arrangement algorithms
+		static
+		enum Algorithm
+		{
+			FASTRAT_CPLEX,
+			FASTRAT_GMC
+		};
+
+		/// Sequence of algorithms
+		std::vector<Algorithm> sequence;
+
+
+
+		/// @name Constructors & destructors
+		/// @{
+
+		/// Not default-constructable
+		FacilityArrangementStrategy(void) = delete;
+
+		/// By-value constructor
+		FacilityArrangementStrategy(Algorithm const algorithm);
+
+		/// By-value constructor
+		FacilityArrangementStrategy(std::vector<Algorithm> const &sequence);
+
+		/// @}
+
+
+
+	public:
+		/// @name Operators
+		/// @{
+
+		FacilityArrangementStrategy const operator>>(FacilityArrangementStrategy const &other);
+
+		/// @}
+
+
+
+	friend Facility;
+	};
+
+
+
 	/// @name Metadata
 	/// @{
 
@@ -117,8 +115,8 @@ public:
 	struct
 	{
 		FacilityArrangementStrategy CPLEX;
-		FacilityArrangementStrategy GeneticMonteCarlo;
-	} strategy;
+		FacilityArrangementStrategy MonteCarlo;
+	} strategy_blocks;
 
 
 
@@ -139,7 +137,7 @@ public:
 	Facility
 	(
 		UnaryMap<Point<CoordinateType, AreaInputType, SubjectCountOutputType>> const &points,
-		PlanarMetric<DistanceType, CoordinateType, AreaInputType, SubjectCountOutputType> const &distance
+		PlanarMetric<DistanceType> const &distance
 	);
 
 	/// @}
@@ -154,20 +152,30 @@ public:
 	 *
 	 * Performs an optimal or suboptimal arrangement of subjects and object flows within
 	 * the given facility layout. Optimality/suboptimality and execution time depends on
-	 * the strategy chosen for arrangement. Possible options are listed in the table
-	 * below.
+	 * the strategy chosen for arrangement. Arrangement strategy is a sequence of
+	 * arrangement algorithms executed one after another. Available arrangement
+	 * algorithms are:
 	 * <table>
 	 * <tr align="center">
-	 *     <th>Strategy</th>
+	 *     <th>Algorithm</th>
+	 *     <th>Trivial name</th>
 	 *     <th>Solution quality</th>
 	 *     <th>Time cost</th>
-	 *     <th>Description</th>
+	 *     <th>Referenced function</th>
 	 * </tr>
 	 * <tr align="center">
-	 *     <td><tt>FASTRAT_CPLEX</tt></td>
+	 *     <td><tt>Facility::strategy_blocks.CPLEX</tt></td>
+	 *     <td>CPLEX-based solver</td>
 	 *     <td>Optimal</td>
 	 *     <td>Expensive</td>
-	 *     <td>Launches CPLEX to find an exact solution to the optimisation problem.</td>
+	 *     <td>facilityArrangementAlgorithm_CPLEX</td>
+	 * </tr>
+	 * <tr align="center">
+	 *     <td><tt>Facility::strategy_blocks.MonteCarlo</tt></td>
+	 *     <td>Monte-Carlo generator</td>
+	 *     <td>Suboptimal</td>
+	 *     <td>Reasonable</td>
+	 *     <td>facilityArrangementAlgorithm_CPLEX</td>
 	 * </tr>
 	 * </table>
 	 * 
@@ -181,12 +189,19 @@ public:
 	 * 
 	 * @returns Nothing. All changes are made to the internal data structures.
 	 */
-	template<typename AreaInputType, typename SubjectCountInputType, typename UnitType, typename PriceType>
+	template
+	<
+		typename AreaInputType,
+		typename SubjectCountInputType,
+		typename UnitInputType,
+		typename UnitOutputType,
+		typename PriceType
+	>
 	void arrange
 	(
-		UnaryMap<SubjectType<AreaInputType, SubjectCountInputType, UnitType, PriceType>> const &subject_types,
-		BinaryMap<UnitType> const &total_flows,
-		FacilityArrangementStrategy const strategy = Facility::strategy.CPLEX
+		UnaryMap<SubjectType<AreaInputType, SubjectCountInputType, UnitInputType, PriceType>> const &subject_types,
+		BinaryMap<UnitOutputType> const &total_flows,
+		FacilityArrangementStrategy const strategy = Facility::strategy_blocks.CPLEX
 	);
 
 	/// @}
@@ -216,7 +231,7 @@ template<typename DistanceType, typename CoordinateType, typename AreaInputType,
 Facility::Facility
 (
 	UnaryMap<Point<CoordinateType, AreaInputType, SubjectCountOutputType>> const &points,
-	PlanarMetric<DistanceType, CoordinateType, AreaInputType, SubjectCountOutputType> const &distance
+	PlanarMetric<DistanceType> const &distance
 )
 {
 	this->_points.reset(reinterpret_cast<void *>(new UnaryMap<Point<CoordinateType, AreaInputType, SubjectCountOutputType>>(points)));
@@ -235,11 +250,18 @@ Facility::Facility
 
 
 
-template<typename AreaInputType, typename SubjectCountInputType, typename UnitType, typename PriceType>
+template
+<
+	typename AreaInputType,
+	typename SubjectCountInputType,
+	typename UnitInputType,
+	typename UnitOutputType,
+	typename PriceType
+>
 void Facility::arrange
 (
-	UnaryMap<SubjectType<AreaInputType, SubjectCountInputType, UnitType, PriceType>> const &subject_types,
-	BinaryMap<UnitType> const &total_flows,
+	UnaryMap<SubjectType<AreaInputType, SubjectCountInputType, UnitInputType, PriceType>> const &subject_types,
+	BinaryMap<UnitOutputType> const &total_flows,
 	FacilityArrangementStrategy const strategy
 )
 {

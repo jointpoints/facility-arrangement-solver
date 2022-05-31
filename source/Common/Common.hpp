@@ -22,6 +22,18 @@
 
 #define FASFLOAT_ULPS 0b100
 
+#define RUNTIME_CONDITIONAL(type_name, condition, type_true, type_false, binded_code) \
+if (condition)                                                                        \
+{                                                                                     \
+    using type_name = type_true;                                                      \
+    {binded_code}                                                                     \
+}                                                                                     \
+else                                                                                  \
+{                                                                                     \
+    using type_name = type_false;                                                     \
+    {binded_code}                                                                     \
+}
+
 
 
 
