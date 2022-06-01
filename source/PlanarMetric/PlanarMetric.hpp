@@ -118,6 +118,7 @@ public:
 
 
 template<typename DistanceType>
+	requires fas_numeric<DistanceType>
 PlanarMetric<DistanceType>::PlanarMetric(CORE_FUNCTION_TYPE distance_function)
 	: dist(distance_function)
 {}
@@ -143,6 +144,7 @@ PlanarMetric<DistanceType>::PlanarMetric(CORE_FUNCTION_TYPE distance_function)
 
 
 template<typename DistanceType>
+	requires fas_numeric<DistanceType>
 template<typename Op_CoordinateType, typename Op_AreaInputType, typename Op_SubjectCountOutputType>
 DistanceType const PlanarMetric<DistanceType>
 	::operator()(Point<Op_CoordinateType, Op_AreaInputType, Op_SubjectCountOutputType> const &point1, Point<Op_CoordinateType, Op_AreaInputType, Op_SubjectCountOutputType> const &point2) const
@@ -228,7 +230,7 @@ PlanarMetric<DistanceType> const Minkowski
 )
 {
 	// If order is 1, use simpler formula
-	if consteval(order == 1)
+	if (order == 1)
 		return PlanarMetric(CORE_FUNCTION_TYPE
 		(
 			[order](FASFloat const &point1_x, FASFloat const &point1_y, FASFloat const &point2_x, FASFloat const &point2_y)
@@ -237,7 +239,7 @@ PlanarMetric<DistanceType> const Minkowski
 			}
 		));
 	// If order is infinity, use simpler formula
-	else if consteval(order == oo)
+	else if (order == oo)
 		return PlanarMetric(CORE_FUNCTION_TYPE
 		(
 			[order](FASFloat const &point1_x, FASFloat const &point1_y, FASFloat const &point2_x, FASFloat const &point2_y)

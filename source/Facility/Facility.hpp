@@ -32,11 +32,10 @@ class Facility
 	class FacilityArrangementStrategy
 	{
 		/// Possible arrangement algorithms
-		static
 		enum Algorithm
 		{
 			FASTRAT_CPLEX,
-			FASTRAT_GMC
+			FASTRAT_MC
 		};
 
 		/// Sequence of algorithms
@@ -111,12 +110,16 @@ class Facility
 
 public:
 	/// Available arrangement algorithms
-	static
+	inline static
 	struct
 	{
 		FacilityArrangementStrategy CPLEX;
 		FacilityArrangementStrategy MonteCarlo;
-	} strategy_blocks;
+	} strategy_blocks
+	{
+		FacilityArrangementStrategy(FacilityArrangementStrategy::Algorithm::FASTRAT_CPLEX),
+		FacilityArrangementStrategy(FacilityArrangementStrategy::Algorithm::FASTRAT_MC)
+	};
 
 
 
@@ -234,7 +237,15 @@ Facility::Facility
 	PlanarMetric<DistanceType> const &distance
 )
 {
-	this->_points.reset(static_cast<void *>(new UnaryMap<Point<CoordinateType, AreaInputType, SubjectCountOutputType>>(points)));
+	this->_points = std::unique_ptr<void>
+	(
+		static_cast<void *>(new UnaryMap<Point<CoordinateType, AreaInputType, SubjectCountOutputType>>(points)),
+		[](UnaryMap<Point<CoordinateType, AreaInputType, SubjectCountOutputType>> *pointer)
+		{
+			delete pointer;
+			return;
+		}
+	);
 	this->_coordinate_type_integral = std::is_same<CoordinateType, FASInteger>::value;
 	this->_area_input_type_integral = std::is_same<AreaInputType, FASInteger>::value;
 	this->_subject_count_output_type_integral = std::is_same<SubjectCountOutputType, FASInteger>::value;

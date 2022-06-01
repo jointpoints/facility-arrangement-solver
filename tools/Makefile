@@ -1,4 +1,4 @@
-FASOLVER_VERSION = 0.1
+FASOLVER_VERSION = 0.2
 FASOLVER_TESTBUILD = test 
 #FASOLVER_TESTBUILD = 
 
@@ -20,7 +20,7 @@ endif
 
 
 
-BUILD_UNITS = PlanarMetric Logger
+BUILD_UNITS = Logger Facility
 SOURCE_PATH = source
 OBJ_PATH = __buildtmp__
 

@@ -33,7 +33,7 @@ class Point final
 	<
 		std::is_same<SubjectCountOutputType, FASNone>::value,
 		FASNone,
-		std::conditional
+		typename std::conditional
 		<
 			std::is_same<SubjectCountOutputType, FASInteger>::value && std::is_same<AreaInputType, FASInteger>::value,
 			FASInteger,
@@ -180,6 +180,7 @@ public:
 
 
 template<typename CoordinateType, typename AreaInputType, typename SubjectCountOutputType>
+	requires fas_numeric<CoordinateType> && fas_numeric<AreaInputType> && fas_numeric_or_none<SubjectCountOutputType>
 template<typename SubjectCountInputType, typename UnitType, typename PriceType>
 bool const Point<CoordinateType, AreaInputType, SubjectCountOutputType>
 	::_addSubject(std::string const type_name, SubjectType<AreaInputType, SubjectCountInputType, UnitType, PriceType> const& type, SubjectCountOutputType const count)
@@ -197,6 +198,7 @@ bool const Point<CoordinateType, AreaInputType, SubjectCountOutputType>
 
 
 template<typename CoordinateType, typename AreaInputType, typename SubjectCountOutputType>
+	requires fas_numeric<CoordinateType> && fas_numeric<AreaInputType> && fas_numeric_or_none<SubjectCountOutputType>
 template<typename SubjectCountInputType, typename UnitType, typename PriceType>
 void Point<CoordinateType, AreaInputType, SubjectCountOutputType>
 	::_removeSubject(std::string const type_name, SubjectType<AreaInputType, SubjectCountInputType, UnitType, PriceType> const& type, SubjectCountOutputType const count)
@@ -214,6 +216,7 @@ void Point<CoordinateType, AreaInputType, SubjectCountOutputType>
 
 
 template<typename CoordinateType, typename AreaInputType, typename SubjectCountOutputType>
+	requires fas_numeric<CoordinateType> && fas_numeric<AreaInputType> && fas_numeric_or_none<SubjectCountOutputType>
 Point<CoordinateType, AreaInputType, SubjectCountOutputType>
 	::Point(CoordinateType const x, CoordinateType const y, AreaInputType const area)
 	: _x(x)
@@ -225,6 +228,7 @@ Point<CoordinateType, AreaInputType, SubjectCountOutputType>
 
 
 template<typename CoordinateType, typename AreaInputType, typename SubjectCountOutputType>
+	requires fas_numeric<CoordinateType> && fas_numeric<AreaInputType> && fas_numeric_or_none<SubjectCountOutputType>
 template<typename Old_CoordinateType, typename Old_AreaInputType, typename Old_SubjectCountOutputType>
 Point<CoordinateType, AreaInputType, SubjectCountOutputType>
 	::Point(Point<Old_CoordinateType, Old_AreaInputType, Old_SubjectCountOutputType> const &point)
@@ -242,6 +246,7 @@ Point<CoordinateType, AreaInputType, SubjectCountOutputType>
 
 #define DEFINE_GETTER(getterName, ReturnType, getter_var)                                  \
 template<typename CoordinateType, typename AreaInputType, typename SubjectCountOutputType> \
+	requires fas_numeric<CoordinateType> && fas_numeric<AreaInputType> && fas_numeric_or_none<SubjectCountOutputType> \
 ReturnType const Point<CoordinateType, AreaInputType, SubjectCountOutputType>              \
     :: ## getterName (void) const                                                          \
 {                                                                                          \
@@ -253,6 +258,7 @@ DEFINE_GETTER(y, CoordinateType, _y)
 DEFINE_GETTER(areaTotal, AreaInputType, _area_total)
 
 template<typename CoordinateType, typename AreaInputType, typename SubjectCountOutputType>
+	requires fas_numeric<CoordinateType> && fas_numeric<AreaInputType> && fas_numeric_or_none<SubjectCountOutputType>
 Point<CoordinateType, AreaInputType, SubjectCountOutputType>::AreaOutputType const Point<CoordinateType, AreaInputType, SubjectCountOutputType>
     ::areaFree(void) const
 {
@@ -264,6 +270,7 @@ Point<CoordinateType, AreaInputType, SubjectCountOutputType>::AreaOutputType con
 
 
 template<typename CoordinateType, typename AreaInputType, typename SubjectCountOutputType>
+	requires fas_numeric<CoordinateType> && fas_numeric<AreaInputType> && fas_numeric_or_none<SubjectCountOutputType>
 SubjectCountOutputType const Point<CoordinateType, AreaInputType, SubjectCountOutputType>
 	::countSubjects(void) const
 {
@@ -276,6 +283,7 @@ SubjectCountOutputType const Point<CoordinateType, AreaInputType, SubjectCountOu
 
 
 template<typename CoordinateType, typename AreaInputType, typename SubjectCountOutputType>
+	requires fas_numeric<CoordinateType> && fas_numeric<AreaInputType> && fas_numeric_or_none<SubjectCountOutputType>
 SubjectCountOutputType const Point<CoordinateType, AreaInputType, SubjectCountOutputType>
 	::countSubjects(std::string const type_name) const
 {
@@ -332,7 +340,7 @@ template<typename CoordinateType, typename AreaInputType>
 	requires fas_numeric<CoordinateType> && fas_numeric<AreaInputType>
 UnaryMap<Point<CoordinateType, AreaInputType>> const grid(uint32_t const row_count, uint32_t const column_count, CoordinateType const distance, AreaInputType const capacity)
 {
-	PointMap<CoordinateType, AreaInputType> answer;
+	UnaryMap<Point<CoordinateType, AreaInputType>> answer;
 
 	//for (uint32_t row_i : std::views::iota(0, row_count))
 	//	for (uint32_t column_i : std::views::iota(0, column_count))

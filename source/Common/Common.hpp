@@ -59,11 +59,11 @@ struct FASNone
 
 	template<typename X>
 	inline
-	FASNone & operator=(X &) {return *this};
+	FASNone & operator=(X &) {return *this;};
 
 	template<typename X>
 	inline
-	FASNone & operator=(X &&) {return *this};
+	FASNone & operator=(X &&) {return *this;};
 };
 
 
@@ -117,7 +117,7 @@ template<typename X>
 inline
 bool const operator==(FASFloat const &fas_float, X const &other)
 {
-	return std::abs(fas_float.core - other) <= std::numeric_limits<X>::epsilon * std::abs(fas_float.core + other) * FASFLOAT_ULPS || std::abs(fas_float.core - other) < std::numeric_limits<X>::min();
+	return std::abs(fas_float.core - other) <= std::numeric_limits<X>::epsilon() * std::abs(fas_float.core + other) * FASFLOAT_ULPS || std::abs(fas_float.core - other) < std::numeric_limits<X>::min();
 }
 
 template<>
@@ -127,13 +127,13 @@ bool const operator==(FASFloat const &fas_float, FASFloat const &other)
 	return fas_float == other.core;
 }
 
-template<typename X>
+/*template<typename X>
 	requires std::floating_point<X> || std::integral<X>
 inline
 bool const operator==(X const &other, FASFloat const &fas_float)
 {
 	return fas_float == other;
-}
+}*/
 
 
 
@@ -191,14 +191,14 @@ bool const operator>(X const &other, FASFloat const &fas_float)
 template<typename X>                                                                 \
     requires std::floating_point<X> || std::integral<X> || std::same_as<X, FASFloat> \
 inline                                                                               \
-FASFloat & operator s (FASFloat const &fas_float, X const &other)                    \
+FASFloat operator s (FASFloat const &fas_float, X const &other)                      \
 {                                                                                    \
     return FASFloat(fas_float s other);                                              \
 }                                                                                    \
                                                                                      \
 template<>                                                                           \
 inline                                                                               \
-FASFloat & operator s (FASFloat const &fas_float, FASFloat const &other)             \
+FASFloat operator s (FASFloat const &fas_float, FASFloat const &other)               \
 {                                                                                    \
     return fas_float s other.core;                                                   \
 }                                                                                    \
@@ -206,7 +206,7 @@ FASFloat & operator s (FASFloat const &fas_float, FASFloat const &other)        
 template<typename X>                                                                 \
     requires std::floating_point<X> || std::integral<X>                              \
 inline                                                                               \
-FASFloat & operator s (X const &other, FASFloat const &fas_float)                    \
+FASFloat operator s (X const &other, FASFloat const &fas_float)                      \
 {                                                                                    \
     return FASFloat(other s fas_float);                                              \
 }
@@ -218,6 +218,7 @@ OP(/)
 
 
 
+#undef OP
 #define OP(s)                                                                        \
 template<typename X>                                                                 \
     requires std::floating_point<X> || std::integral<X> || std::same_as<X, FASFloat> \
@@ -295,7 +296,7 @@ struct FASOuterReturnTypeSelector<FASFloat> {using type = decltype(FASFloat::cor
 template<typename FASNumber>
 FASOuterReturnTypeSelector<FASNumber>::type fasAbs(FASNumber const& n1, FASNumber const& n2)
 {
-	if consteval(std::is_same<FASNumber, FASInteger>::value)
+	if (std::is_same<FASNumber, FASInteger>::value)
 		return std::abs(n1, n2);
 	else
 		return std::abs(n1.core, n2.core);
