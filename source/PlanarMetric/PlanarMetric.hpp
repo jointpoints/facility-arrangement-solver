@@ -233,7 +233,7 @@ PlanarMetric<DistanceType> const Minkowski
 	if (order == 1)
 		return PlanarMetric(CORE_FUNCTION_TYPE
 		(
-			[order](FASFloat const &point1_x, FASFloat const &point1_y, FASFloat const &point2_x, FASFloat const &point2_y)
+			[](FASFloat const &point1_x, FASFloat const &point1_y, FASFloat const &point2_x, FASFloat const &point2_y)
 			{
 				return fasAbs(point1_x - point2_x) + fasAbs(point1_y - point2_y);
 			}
@@ -242,7 +242,7 @@ PlanarMetric<DistanceType> const Minkowski
 	else if (order == oo)
 		return PlanarMetric(CORE_FUNCTION_TYPE
 		(
-			[order](FASFloat const &point1_x, FASFloat const &point1_y, FASFloat const &point2_x, FASFloat const &point2_y)
+			[](FASFloat const &point1_x, FASFloat const &point1_y, FASFloat const &point2_x, FASFloat const &point2_y)
 			{
 				return std::max(fasAbs(point1_x - point2_x), fasAbs(point1_y - point2_y));
 			}
@@ -251,7 +251,7 @@ PlanarMetric<DistanceType> const Minkowski
 	else
 		return PlanarMetric(CORE_FUNCTION_TYPE
 		(
-			[order](FASFloat const &point1_x, FASFloat const &point1_y, FASFloat const &point2_x, FASFloat const &point2_y)
+			[](FASFloat const &point1_x, FASFloat const &point1_y, FASFloat const &point2_x, FASFloat const &point2_y)
 			{
 				return std::pow(std::pow(fasAbs(point1_x - point2_x), order) + std::pow(fasAbs(point1_y - point2_y), order), 1.L / order);
 			}

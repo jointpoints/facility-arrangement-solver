@@ -38,11 +38,11 @@ std::string const inline timestamp(void)
 
 
 
-Logger::Logger(std::string const path, int& status_code) noexcept
+Logger::Logger(std::string const path, int *status_code) noexcept
 {
 	// Create a path object out of `path` and test it
 	std::filesystem::path output_file_path(path);
-	if (!output_file_path.has_filename()) {status_code = FASOLVER_LOGGER_STATUS_BAD_FILENAME; return;}
+	if (!output_file_path.has_filename()) {*status_code = FASOLVER_LOGGER_STATUS_BAD_FILENAME; return;}
 	if (!output_file_path.is_absolute())
 		output_file_path = std::filesystem::current_path() / output_file_path;
 	try
@@ -50,11 +50,11 @@ Logger::Logger(std::string const path, int& status_code) noexcept
 		if (output_file_path.has_relative_path() && !std::filesystem::exists(output_file_path.parent_path()))
 			std::filesystem::create_directory(output_file_path.parent_path());
 	}
-	catch (...) {status_code = FASOLVER_LOGGER_STATUS_BAD_PARENT; return;}
+	catch (...) {*status_code = FASOLVER_LOGGER_STATUS_BAD_PARENT; return;}
 
 	// Open the output stream
 	this->output_stream.open(path, std::ios::out);
-	if (!output_stream.is_open()) {status_code = FASOLVER_LOGGER_STATUS_BAD_FILE; return;}
+	if (!output_stream.is_open()) {*status_code = FASOLVER_LOGGER_STATUS_BAD_FILE; return;}
 
 	// Assign the new stream to the universal interface
 	this->core.reset(new LoggerCore(this->output_stream));
@@ -66,7 +66,7 @@ Logger::Logger(std::string const path, int& status_code) noexcept
 
 	this->info("Log started.");
 
-	status_code = FASOLVER_LOGGER_STATUS_OK;
+	*status_code = FASOLVER_LOGGER_STATUS_OK;
 
 	return;
 }
@@ -75,7 +75,7 @@ Logger::Logger(std::string const path, int& status_code) noexcept
 
 
 
-Logger::Logger(std::basic_ostream<char8_t>& output_stream, int& status_code) noexcept
+Logger::Logger(std::basic_ostream<char8_t> &output_stream, int *status_code) noexcept
 {
 	// Assign the given stream to the universal interface
 	this->core.reset(new LoggerCore(output_stream));
@@ -87,7 +87,7 @@ Logger::Logger(std::basic_ostream<char8_t>& output_stream, int& status_code) noe
 
 	this->info("Log started.");
 
-	status_code = FASOLVER_LOGGER_STATUS_OK;
+	*status_code = FASOLVER_LOGGER_STATUS_OK;
 
 	return;
 }

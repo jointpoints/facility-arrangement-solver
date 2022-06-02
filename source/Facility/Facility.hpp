@@ -29,17 +29,17 @@
  */
 class Facility
 {
-	class FacilityArrangementStrategy
+	class _FacilityArrangementStrategy
 	{
 		/// Possible arrangement algorithms
-		enum Algorithm
+		enum _Algorithm
 		{
 			FASTRAT_CPLEX,
 			FASTRAT_MC
 		};
 
 		/// Sequence of algorithms
-		std::vector<Algorithm> sequence;
+		std::vector<_Algorithm> _sequence;
 
 
 
@@ -47,13 +47,13 @@ class Facility
 		/// @{
 
 		/// Not default-constructable
-		FacilityArrangementStrategy(void) = delete;
+		_FacilityArrangementStrategy(void) = delete;
 
 		/// By-value constructor
-		FacilityArrangementStrategy(Algorithm const algorithm);
+		_FacilityArrangementStrategy(_Algorithm const algorithm);
 
 		/// By-value constructor
-		FacilityArrangementStrategy(std::vector<Algorithm> const &sequence);
+		_FacilityArrangementStrategy(std::vector<_Algorithm> const &sequence);
 
 		/// @}
 
@@ -63,7 +63,7 @@ class Facility
 		/// @name Operators
 		/// @{
 
-		FacilityArrangementStrategy const operator>>(FacilityArrangementStrategy const &other);
+		_FacilityArrangementStrategy const operator>>(_FacilityArrangementStrategy const &other);
 
 		/// @}
 
@@ -94,15 +94,44 @@ class Facility
 
 
 
+	/// @name Memory management
+	/// @{
+
+	/// Deleter for _points
+	struct _PointsDeleter
+	{
+		Facility *owner;
+		_PointsDeleter(Facility *const owner);
+		void operator()(void *pointer) const;
+	};
+	/// Deleter for _distance
+	struct _DistanceDeleter
+	{
+		Facility *owner;
+		_DistanceDeleter(Facility *const owner);
+		void operator()(void *pointer) const;
+	};
+	/// Deleter for _distance
+	struct _FlowsDeleter
+	{
+		Facility *owner;
+		_FlowsDeleter(Facility *const owner);
+		void operator()(void *pointer) const;
+	};
+
+	/// @}
+
+
+
 	/// @name Data
 	/// @{
 
 	/// Points that make up a facility
-	std::unique_ptr<void> _points;
+	std::unique_ptr<void, _PointsDeleter> _points;
 	/// A functor to measure distances between points
-	std::unique_ptr<void> _distance;
+	std::unique_ptr<void, _DistanceDeleter> _distance;
 	/// Flows between points
-	std::unique_ptr<void> _flows;
+	std::unique_ptr<void, _FlowsDeleter> _flows;
 
 	/// @}
 
@@ -113,12 +142,12 @@ public:
 	inline static
 	struct
 	{
-		FacilityArrangementStrategy CPLEX;
-		FacilityArrangementStrategy MonteCarlo;
+		_FacilityArrangementStrategy CPLEX;
+		_FacilityArrangementStrategy MonteCarlo;
 	} strategy_blocks
 	{
-		FacilityArrangementStrategy(FacilityArrangementStrategy::Algorithm::FASTRAT_CPLEX),
-		FacilityArrangementStrategy(FacilityArrangementStrategy::Algorithm::FASTRAT_MC)
+		_FacilityArrangementStrategy(_FacilityArrangementStrategy::_Algorithm::FASTRAT_CPLEX),
+		_FacilityArrangementStrategy(_FacilityArrangementStrategy::_Algorithm::FASTRAT_MC)
 	};
 
 
@@ -203,7 +232,7 @@ public:
 	(
 		UnaryMap<SubjectType<Subj_AreaInputType, SubjectCountInputType, UnitInputType, PriceType>> const &subject_types,
 		BinaryMap<UnitInputType> const &total_flows,
-		FacilityArrangementStrategy const strategy = Facility::strategy_blocks.CPLEX,
+		_FacilityArrangementStrategy const strategy = Facility::strategy_blocks.CPLEX,
 		bool const warm_start = false
 	);
 
@@ -236,22 +265,15 @@ Facility::Facility
 	UnaryMap<Point<CoordinateType, AreaInputType, SubjectCountOutputType>> const &points,
 	PlanarMetric<DistanceType> const &distance
 )
+	: _points(new UnaryMap<Point<CoordinateType, AreaInputType, SubjectCountOutputType>>(points), _PointsDeleter(this))
+	, _distance(new PlanarMetric(distance), _DistanceDeleter(this))
+	, _flows(nullptr, _FlowsDeleter(this))
 {
-	this->_points = std::unique_ptr<void>
-	(
-		static_cast<void *>(new UnaryMap<Point<CoordinateType, AreaInputType, SubjectCountOutputType>>(points)),
-		[](UnaryMap<Point<CoordinateType, AreaInputType, SubjectCountOutputType>> *pointer)
-		{
-			delete pointer;
-			return;
-		}
-	);
 	this->_coordinate_type_integral = std::is_same<CoordinateType, FASInteger>::value;
 	this->_area_input_type_integral = std::is_same<AreaInputType, FASInteger>::value;
 	this->_subject_count_output_type_integral = std::is_same<SubjectCountOutputType, FASInteger>::value;
 	this->_subject_count_output_type_none = std::is_same<SubjectCountOutputType, FASNone>::value;
 
-	this->_distance.reset(static_cast<void *>(new PlanarMetric(distance)));
 	this->_distance_type_integral = std::is_same<DistanceType, FASInteger>::value;
 
 	return;
@@ -272,7 +294,7 @@ void Facility::arrange
 (
 	UnaryMap<SubjectType<Subj_AreaInputType, SubjectCountInputType, UnitInputType, PriceType>> const &subject_types,
 	BinaryMap<UnitInputType> const &total_flows,
-	FacilityArrangementStrategy const strategy,
+	_FacilityArrangementStrategy const strategy,
 	bool const warm_start
 )
 {
@@ -306,15 +328,13 @@ void Facility::arrange
 		);
 
 		// Define the interpretation of strategy blocks
-		std::map<FacilityArrangementStrategy::Algorithm, FacilityArrangementAlgorithm> const algorithms
-		{
-			{FacilityArrangementStrategy::Algorithm::FASTRAT_CPLEX, &facilityArrangementAlgorithm_CPLEX<DistanceType, CoordinateType, AreaInputType, SubjectCountInputType, SubjectCountOutputType, UnitInputType, UnitOutputType, PriceType>}
-		};
+		std::map<_FacilityArrangementStrategy::_Algorithm, FacilityArrangementAlgorithm> algorithms;
+		algorithms[_FacilityArrangementStrategy::_Algorithm::FASTRAT_CPLEX] = &facilityArrangementAlgorithm_CPLEX<DistanceType, CoordinateType, AreaInputType, SubjectCountInputType, SubjectCountOutputType, UnitInputType, UnitOutputType, PriceType>;
 
 		// Reinterpret the facility data
-		auto *explicit_points = static_cast<UnaryMap<Point<CoordinateType, AreaInputType, SubjectCountOutputType>> *>(this->_points.get());
-		auto *explicit_distance = static_cast<PlanarMetric<DistanceType> *>(this->_distance.get());
-		auto *explicit_flows = static_cast<BinaryPairMap<UnitOutputType> *>(this->_flows.get());
+		auto *explicit_points = (UnaryMap<Point<CoordinateType, AreaInputType, SubjectCountOutputType>> *)(this->_points.get());
+		auto *explicit_distance = (PlanarMetric<DistanceType> *)(this->_distance.get());
+		auto *explicit_flows = (BinaryPairMap<UnitOutputType> *)(this->_flows.get());
 
 		// Convert subject types so that their area type coincides with the one of the facility
 		UnaryMap<SubjectType<AreaInputType, SubjectCountInputType, UnitInputType, PriceType>> converted_subject_types;
@@ -322,8 +342,8 @@ void Facility::arrange
 			converted_subject_types[type_name] = type;
 		
 		// Execute the arrangement strategy
-		for (auto step_it = strategy.sequence.begin(); step_it != strategy.sequence.end(); ++step_it)
-			*algorithms.at(*step_it)(*explicit_points, *explicit_distance, *explicit_flows, converted_subject_types, total_flows, logger, step_it != strategy.sequence.begin() || warm_start);
+		for (auto step_it = strategy._sequence.begin(); step_it != strategy._sequence.end(); ++step_it)
+			*algorithms[*step_it](*explicit_points, *explicit_distance, *explicit_flows, converted_subject_types, total_flows, logger, step_it != strategy._sequence.begin() || warm_start);
 	))))
 }
 

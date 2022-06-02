@@ -294,12 +294,12 @@ struct FASOuterReturnTypeSelector<FASFloat> {using type = decltype(FASFloat::cor
 
 
 template<typename FASNumber>
-FASOuterReturnTypeSelector<FASNumber>::type fasAbs(FASNumber const& n1, FASNumber const& n2)
+FASOuterReturnTypeSelector<FASNumber>::type fasAbs(FASNumber const& fas_number)
 {
 	if (std::is_same<FASNumber, FASInteger>::value)
-		return std::abs(n1, n2);
+		return std::abs(fas_number);
 	else
-		return std::abs(n1.core, n2.core);
+		return std::abs(fas_number.core);
 }
 
 

@@ -89,7 +89,7 @@ public:
 	 *   log file.
 	 */
 	explicit
-	Logger(std::string const path, int& status_code) noexcept;
+	Logger(std::string const path, int *status_code) noexcept;
 
 	/**
 	 * @brief Construct a logger bound to the given stream
@@ -111,7 +111,7 @@ public:
 	 *   log file.
 	 */
 	explicit
-	Logger(std::basic_ostream<char8_t>& output_stream, int& status_code) noexcept;
+	Logger(std::basic_ostream<char8_t> &output_stream, int *status_code) noexcept;
 
 	/**
 	 * @brief Destroy the logger
