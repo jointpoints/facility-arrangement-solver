@@ -48,6 +48,8 @@ struct SubjectType final
 	/// @name Constructors & destructors
 	/// @{
 
+	SubjectType(void) = default;
+
 	SubjectType(UnitInputType in_capacity, UnitInputType out_capacity, AreaInputType area, SubjectCountInputType initially_available, PriceType price);
 
 	template<typename Old_AreaInputType, typename Old_SubjectCountInputType, typename Old_UnitInputType, typename Old_PriceType>

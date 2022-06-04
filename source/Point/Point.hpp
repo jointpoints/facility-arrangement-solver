@@ -248,9 +248,9 @@ Point<CoordinateType, AreaInputType, SubjectCountOutputType>
 template<typename CoordinateType, typename AreaInputType, typename SubjectCountOutputType> \
 	requires fas_numeric<CoordinateType> && fas_numeric<AreaInputType> && fas_numeric_or_none<SubjectCountOutputType> \
 ReturnType const Point<CoordinateType, AreaInputType, SubjectCountOutputType>              \
-    :: ## getterName (void) const                                                          \
+    ::getterName (void) const                                                              \
 {                                                                                          \
-    return this-> ## getter_var;                                                           \
+    return this->getter_var;                                                               \
 }
 
 DEFINE_GETTER(x, CoordinateType, _x)

@@ -235,7 +235,7 @@ PlanarMetric<DistanceType> const Minkowski
 		(
 			[](FASFloat const &point1_x, FASFloat const &point1_y, FASFloat const &point2_x, FASFloat const &point2_y)
 			{
-				return fasAbs(point1_x - point2_x) + fasAbs(point1_y - point2_y);
+				return DistanceType(fasAbs(point1_x - point2_x) + fasAbs(point1_y - point2_y));
 			}
 		));
 	// If order is infinity, use simpler formula
@@ -244,7 +244,7 @@ PlanarMetric<DistanceType> const Minkowski
 		(
 			[](FASFloat const &point1_x, FASFloat const &point1_y, FASFloat const &point2_x, FASFloat const &point2_y)
 			{
-				return std::max(fasAbs(point1_x - point2_x), fasAbs(point1_y - point2_y));
+				return DistanceType(std::max(fasAbs(point1_x - point2_x), fasAbs(point1_y - point2_y)));
 			}
 		));
 	// Otherwise, use the general formula
@@ -253,7 +253,7 @@ PlanarMetric<DistanceType> const Minkowski
 		(
 			[](FASFloat const &point1_x, FASFloat const &point1_y, FASFloat const &point2_x, FASFloat const &point2_y)
 			{
-				return std::pow(std::pow(fasAbs(point1_x - point2_x), order) + std::pow(fasAbs(point1_y - point2_y), order), 1.L / order);
+				return DistanceType(std::pow(std::pow(fasAbs(point1_x - point2_x), order) + std::pow(fasAbs(point1_y - point2_y), order), 1.L / order));
 			}
 		));
 }

@@ -12,7 +12,7 @@
 #include "../Common/Common.hpp"
 #include "../SubjectType/SubjectType.hpp"
 #include "../Logger/Logger.hpp"
-#include <ilcplex/ilocplex.h>
+//#include <ilcplex/ilocplex.h>
 
 
 
@@ -35,18 +35,18 @@ void facilityArrangementAlgorithm_CPLEX
 	PlanarMetric<DistanceType> const &distance,
 	BinaryPairMap<UnitOutputType> &flows,
 	UnaryMap<SubjectType<AreaInputType, SubjectCountInputType, UnitInputType, PriceType>> const &subject_types,
-	BinaryMap<UnitOutputType> const &total_flows,
+	BinaryMap<UnitInputType> const &total_flows,
 	Logger const &logger,
-	bool const warm_start = false
+	bool warm_start = false
 )
 {
 	// Define types of variables based on parameters
-	using CplexUnitOutputTypeVar = std::conditional
+	/*using CplexUnitOutputTypeVar = std::conditional
 	<
-		std::is_same<UnitOutputType, FASInteger>,
+		std::is_same<UnitOutputType, FASInteger>::value,
 		IloIntVar,
 		IloNumVar
-	>;
+	>::type;*/
 	/*using SubjectCountOutputType = std::conditional
 	<
 		facility->_subject_count_output_type_integral,
@@ -54,7 +54,7 @@ void facilityArrangementAlgorithm_CPLEX
 	>;*/
 
 	// Start preparation of a CPLEX model
-	IloEnv cplex_environment;
+	/*IloEnv cplex_environment;
 
 	// CPLEX variables and constraints
 	// Flows of objects (cplex_var_flow[{u,v}][{i,j}] = flow of objects from all objects
@@ -67,7 +67,7 @@ void facilityArrangementAlgorithm_CPLEX
 	// located in u)
 	//BinaryMap<>
 
-	cplex_environment.end();
+	cplex_environment.end();*/
 
 	return;
 }

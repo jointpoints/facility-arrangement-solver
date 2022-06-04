@@ -43,7 +43,10 @@ struct FASFloat
 {
 	long double core;
 
+	inline
 	FASFloat(void) : core(0) {};
+
+	inline
 	FASFloat(FASFloat const &value) : core(value.core) {};
 	
 	template<typename X>
@@ -193,7 +196,7 @@ template<typename X>                                                            
 inline                                                                               \
 FASFloat operator s (FASFloat const &fas_float, X const &other)                      \
 {                                                                                    \
-    return FASFloat(fas_float s other);                                              \
+    return FASFloat(fas_float.core s other);                                         \
 }                                                                                    \
                                                                                      \
 template<>                                                                           \
@@ -208,7 +211,7 @@ template<typename X>                                                            
 inline                                                                               \
 FASFloat operator s (X const &other, FASFloat const &fas_float)                      \
 {                                                                                    \
-    return FASFloat(other s fas_float);                                              \
+    return FASFloat(other s fas_float.core);                                         \
 }
 
 OP(+)
@@ -294,12 +297,18 @@ struct FASOuterReturnTypeSelector<FASFloat> {using type = decltype(FASFloat::cor
 
 
 template<typename FASNumber>
+	requires fas_numeric<FASNumber>
+inline
 FASOuterReturnTypeSelector<FASNumber>::type fasAbs(FASNumber const& fas_number)
 {
-	if (std::is_same<FASNumber, FASInteger>::value)
-		return std::abs(fas_number);
-	else
-		return std::abs(fas_number.core);
+	return std::abs(fas_number);
+}
+
+template<>
+inline
+FASOuterReturnTypeSelector<FASFloat>::type fasAbs<FASFloat>(FASFloat const& fas_number)
+{
+	return std::abs(fas_number.core);
 }
 
 

@@ -316,7 +316,7 @@ void Facility::arrange
 			FASInteger,
 			FASFloat
 		>::type;
-		using FacilityArrangementAlgorithm = void (*)
+		using FacilityArrangementAlgorithm = std::function<void
 		(
 			UnaryMap<Point<CoordinateType, AreaInputType, SubjectCountOutputType>> &,
 			PlanarMetric<DistanceType> const &,
@@ -325,11 +325,11 @@ void Facility::arrange
 			BinaryMap<UnitInputType> const &,
 			Logger const &,
 			bool const
-		);
+		)>;
 
 		// Define the interpretation of strategy blocks
 		std::map<_FacilityArrangementStrategy::_Algorithm, FacilityArrangementAlgorithm> algorithms;
-		algorithms[_FacilityArrangementStrategy::_Algorithm::FASTRAT_CPLEX] = &facilityArrangementAlgorithm_CPLEX<DistanceType, CoordinateType, AreaInputType, SubjectCountInputType, SubjectCountOutputType, UnitInputType, UnitOutputType, PriceType>;
+		algorithms.emplace(_FacilityArrangementStrategy::_Algorithm::FASTRAT_CPLEX, &facilityArrangementAlgorithm_CPLEX<DistanceType, CoordinateType, AreaInputType, SubjectCountInputType, SubjectCountOutputType, UnitInputType, UnitOutputType, PriceType>);
 
 		// Reinterpret the facility data
 		auto *explicit_points = (UnaryMap<Point<CoordinateType, AreaInputType, SubjectCountOutputType>> *)(this->_points.get());
@@ -343,7 +343,7 @@ void Facility::arrange
 		
 		// Execute the arrangement strategy
 		for (auto step_it = strategy._sequence.begin(); step_it != strategy._sequence.end(); ++step_it)
-			*algorithms[*step_it](*explicit_points, *explicit_distance, *explicit_flows, converted_subject_types, total_flows, logger, step_it != strategy._sequence.begin() || warm_start);
+			algorithms[*step_it](*explicit_points, *explicit_distance, *explicit_flows, converted_subject_types, total_flows, logger, step_it != strategy._sequence.begin() || warm_start);
 	))))
 }
 
