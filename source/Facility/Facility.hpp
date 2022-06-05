@@ -27,9 +27,9 @@
  * interface to \e arrange user's subjects within the facility and the way to organise
  * the \e flow of objects among them.
  */
-class Facility
+class Facility final
 {
-	class _FacilityArrangementStrategy
+	class _FacilityArrangementStrategy final
 	{
 		/// Possible arrangement algorithms
 		enum _Algorithm
@@ -98,21 +98,21 @@ class Facility
 	/// @{
 
 	/// Deleter for _points
-	struct _PointsDeleter
+	struct _PointsDeleter final
 	{
 		Facility *owner;
 		_PointsDeleter(Facility *const owner);
 		void operator()(void *pointer) const;
 	};
 	/// Deleter for _distance
-	struct _DistanceDeleter
+	struct _DistanceDeleter final
 	{
 		Facility *owner;
 		_DistanceDeleter(Facility *const owner);
 		void operator()(void *pointer) const;
 	};
 	/// Deleter for _distance
-	struct _FlowsDeleter
+	struct _FlowsDeleter final
 	{
 		Facility *owner;
 		_FlowsDeleter(Facility *const owner);
@@ -200,7 +200,7 @@ public:
 	 *     <td>CPLEX-based solver</td>
 	 *     <td>Optimal</td>
 	 *     <td>Expensive</td>
-	 *     <td>facilityArrangementAlgorithm_CPLEX</td>
+	 *     <td>faa::CPLEX</td>
 	 * </tr>
 	 * <tr align="center">
 	 *     <td><tt>Facility::strategy_blocks.MonteCarlo</tt></td>
@@ -329,7 +329,7 @@ void Facility::arrange
 
 		// Define the interpretation of strategy blocks
 		std::map<_FacilityArrangementStrategy::_Algorithm, FacilityArrangementAlgorithm> algorithms;
-		algorithms.emplace(_FacilityArrangementStrategy::_Algorithm::FASTRAT_CPLEX, &facilityArrangementAlgorithm_CPLEX<DistanceType, CoordinateType, AreaInputType, SubjectCountInputType, SubjectCountOutputType, UnitInputType, UnitOutputType, PriceType>);
+		algorithms.emplace(_FacilityArrangementStrategy::_Algorithm::FASTRAT_CPLEX, &faa::CPLEX<DistanceType, CoordinateType, AreaInputType, SubjectCountInputType, SubjectCountOutputType, UnitInputType, UnitOutputType, PriceType>);
 
 		// Reinterpret the facility data
 		auto *explicit_points = (UnaryMap<Point<CoordinateType, AreaInputType, SubjectCountOutputType>> *)(this->_points.get());

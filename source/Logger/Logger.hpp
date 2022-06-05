@@ -207,7 +207,7 @@ public:
 
 
 /**
- * @class LoggerStreamBuf
+ * @class Logger::LoggerStreamBuf
  * @brief Log callback stream buffer
  * 
  * @note This is a nested class, it is not intended to be exposed to the rest of the
@@ -256,7 +256,7 @@ public:
 
 
 /**
- * @class LoggerOStream
+ * @class Logger::LoggerOStream
  * @brief Log callback stream
  * 
  * @note This is a nested class, it is not intended to be exposed to the rest of the
@@ -292,7 +292,7 @@ public:
 
 
 /**
- * @class LoggerCore
+ * @class Logger::LoggerCore
  * @brief Core interface of the logger
  *
  * It is used from within the Logger object to output logs into either console or

@@ -10,51 +10,43 @@
 
 
 #include "../Common/Common.hpp"
-#include "../SubjectType/SubjectType.hpp"
-#include "../Logger/Logger.hpp"
-//#include <ilcplex/ilocplex.h>
+#include "FAA_Common.hpp"
+#include <ilcplex/ilocplex.h>
 
 
 
 
 
-template
-<
-	typename DistanceType,
-	typename CoordinateType,
-	typename AreaInputType,
-	typename SubjectCountInputType,
-	typename SubjectCountOutputType,
-	typename UnitInputType,
-	typename UnitOutputType,
-	typename PriceType
->
-void facilityArrangementAlgorithm_CPLEX
-(
-	UnaryMap<Point<CoordinateType, AreaInputType, SubjectCountOutputType>> &points,
-	PlanarMetric<DistanceType> const &distance,
-	BinaryPairMap<UnitOutputType> &flows,
-	UnaryMap<SubjectType<AreaInputType, SubjectCountInputType, UnitInputType, PriceType>> const &subject_types,
-	BinaryMap<UnitInputType> const &total_flows,
-	Logger const &logger,
-	bool warm_start = false
-)
+namespace faa
+{
+
+
+
+
+
+/**
+ * @brief CPLEX-based solver
+ *
+ * details
+ */
+FACILITY_ARRANGEMENT_ALGORITHM(CPLEX)
 {
 	// Define types of variables based on parameters
-	/*using CplexUnitOutputTypeVar = std::conditional
+	using CplexUnitOutputTypeVar = std::conditional
 	<
 		std::is_same<UnitOutputType, FASInteger>::value,
 		IloIntVar,
 		IloNumVar
-	>::type;*/
-	/*using SubjectCountOutputType = std::conditional
+	>::type;
+	using CplexSubjectCountOutputTypeVar = std::conditional
 	<
-		facility->_subject_count_output_type_integral,
-		
-	>;*/
+		std::is_same<SubjectCountOutputType, FASInteger>::value,
+		IloIntVar,
+		IloNumVar
+	>::type;
 
 	// Start preparation of a CPLEX model
-	/*IloEnv cplex_environment;
+	IloEnv cplex_environment;
 
 	// CPLEX variables and constraints
 	// Flows of objects (cplex_var_flow[{u,v}][{i,j}] = flow of objects from all objects
@@ -65,12 +57,18 @@ void facilityArrangementAlgorithm_CPLEX
 	BinaryMap<CplexUnitOutputTypeVar> cplex_var_produced;
 	// Number of subjects (cplex_var_subject_count[u][i] = number of subjects of type i
 	// located in u)
-	//BinaryMap<>
+	BinaryMap<CplexSubjectCountOutputTypeVar> cplex_var_subject_count;
 
-	cplex_environment.end();*/
+	cplex_environment.end();
 
 	return;
 }
+
+
+
+
+
+} // faa
 
 
 
