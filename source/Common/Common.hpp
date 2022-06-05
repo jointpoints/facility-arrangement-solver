@@ -53,6 +53,10 @@ struct FASFloat
 		requires std::floating_point<X> || std::integral<X>
 	inline
 	FASFloat(X const value) : core(value) {};
+
+	template<typename X>
+	inline
+	operator X(void) const {return X(this->core);};
 };
 struct FASNone
 {
