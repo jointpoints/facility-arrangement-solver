@@ -27,7 +27,26 @@ namespace faa
 /**
  * @brief CPLEX-based solver
  *
- * details
+ * This function produces an optimal facility arrangement by solving an optimisation
+ * problem
+ * 
+ * @f[
+ * \begin{align*}
+ * \left\{
+ * \begin{aligned}
+ * &\min \sum_{u, v \in P; i, j \in S} \rho(u, v) \cdot \underline{f_{i, j}[u, v]} \\
+ * &\min \sum_{i \in S} p_i \cdot \underline{\tilde{n}_i} \\
+ * &\sum_{u \in P; i \in S} \underline{f_{i, j}[u, v]} \leq \delta^+_j \cdot \underline{n_j[v]} &&\forall v \in P; \forall j \in S &&&(1) \\
+ * &\sum_{v \in P; j \in S} \underline{f_{i, j}[u, v]} \leq \delta^-_i \cdot \underline{n_i[u]} &&\forall u \in P; \forall i \in S &&&(2) \\
+ * &\sum_{i \in S} a_i \cdot \underline{n_i[u]} \leq c[u] &&\forall u \in P &&&(3) \\
+ * &\sum_{v \in P; j \in S} \underline{f_{i, j}[u, v]} \leq \underline{g_i[u]} + \sum_{v \in P; j \in S} \underline{f_{j, i}[v, u]} &&\forall u \in P; \forall i \in S &&&(4) \\
+ * &\sum_{u, v \in P} \underline{f_{i, j}[u, v]} = f_{i, j} &&\forall i, j \in S &&&(5) \\
+ * &\sum_{u \in P} \underline{g_i[u]} = \max \left\{ \sum_{j \in S} \left( f_{i, j} - f_{j, i} \right), 0 \right\} &&\forall i \in S &&&(6) \\
+ * &\sum_{u \in P} \underline{n_i[u]} = n_i + \underline{\tilde{n}_i} &&\forall i \in S &&&(7)
+ * \end{aligned}
+ * \right.
+ * \end{align*}
+ * @f]
  */
 FACILITY_ARRANGEMENT_ALGORITHM(CPLEX)
 {
@@ -50,7 +69,7 @@ using name = std::conditional            \
     __VA_ARGS__,                         \
     IloIntVar,                           \
     IloNumVar                            \
->::type;
+>::type
 	DEFINE_CPLEX_TYPE_VAR(CplexSubjectCountOutputTypeVar, std::is_same<SubjectCountOutputType, FASInteger>::value);
 	DEFINE_CPLEX_TYPE_VAR(CplexUnitOutputTypeVar, std::is_same<UnitOutputType, FASInteger>::value);
 #undef DEFINE_CPLEX_TYPE_VAR
@@ -81,7 +100,7 @@ using name = std::conditional            \
 	// (3) - total area of all subjects placed into a point cannot exceed its area
 	//       capacity
 	// (4) - relaxed Kirchhoff constraint, output of a subject is not greater than its
-	//       input
+	//       input + units it produced
 	// (5) - total flow requirements are met
 	// (6) - production requirements are met
 	// (7) - all subjects are placed into points
@@ -203,6 +222,7 @@ using name = std::conditional            \
 	cplex.setWarning(logger.getWarningCallback());
 	cplex.setError(logger.getErrorCallback());
 	cplex.solve();
+	cplex.exportModel("model.lp");
 
 	cplex_environment.end();
 

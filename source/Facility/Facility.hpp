@@ -85,10 +85,12 @@ class Facility final
 	bool _area_input_type_integral;
 	/// Says whether subjects are counted by integers
 	bool _subject_count_output_type_integral;
-	/// Says whether subjects are not counted at all
+	/// Says whether subject counting type is not set
 	bool _subject_count_output_type_none;
 	/// Says whether units of objects are integral
 	bool _unit_output_type_integral;
+	/// Says whether units counting type is not set
+	bool _unit_output_type_none;
 
 	/// @}
 
@@ -304,6 +306,18 @@ void Facility::arrange
 	if (logger_status_code != FASOLVER_LOGGER_STATUS_OK)
 		throw 1; // TODO
 	
+	// Log strategy
+	{
+		std::map<_FacilityArrangementStrategy::_Algorithm, std::string> const algorithm_names
+		{
+			{_FacilityArrangementStrategy::FASTRAT_CPLEX, "CPLEX"},
+			{_FacilityArrangementStrategy::FASTRAT_MC, "Monte-Carlo"}
+		};
+		logger.info("Arrangement strategy is a sequence of " + std::to_string(strategy._sequence.size()) + (strategy._sequence.size() == 1 ? " algorithm:" : " algorithms:"));
+		for (uint64_t step_i = 0; step_i < strategy._sequence.size(); ++step_i)
+			logger.info("    " + std::to_string(step_i + 1) + ". " + algorithm_names.at(strategy._sequence[step_i]));
+	}
+	
 	// Reestablish types
 	RUNTIME_CONDITIONAL(DistanceType, this->_distance_type_integral, FASInteger, FASFloat,
 	RUNTIME_CONDITIONAL(CoordinateType, this->_coordinate_type_integral, FASInteger, FASFloat,
@@ -326,6 +340,35 @@ void Facility::arrange
 			Logger const &,
 			bool const
 		)>;
+
+		// Log final assignments of types
+		logger.info("Types set for arrangement:");
+		logger.info(std::string("    DistanceType           = ") + (this->_distance_type_integral ? "Integer" : "Real"));
+		logger.info(std::string("    CoordinateType         = ") + (this->_coordinate_type_integral ? "Integer" : "Real"));
+		logger.info(std::string("    AreaInputType          = ") + (this->_area_input_type_integral ? "Integer" : "Real"));
+		logger.info(std::string("    AreaOutputType         = ") + (this->_area_input_type_integral && this->_subject_count_output_type_integral ? "Integer" : "Real"));
+		logger.info(std::string("    SubjectCountInputType  = ") + (std::is_same<SubjectCountInputType, FASInteger>::value ? "Integer" : "Real"));
+		logger.info(std::string("    SubjectCountOutputType = ") + (this->_subject_count_output_type_integral ? "Integer" : "Real"));
+		logger.info(std::string("    UnitInputType          = ") + (std::is_same<UnitInputType, FASInteger>::value ? "Integer" : "Real"));
+		logger.info(std::string("    UnitOutputType         = ") + (std::is_same<UnitOutputType, FASInteger>::value ? "Integer" : "Real"));
+		logger.info(std::string("    PriceType              = ") + (std::is_same<PriceType, FASInteger>::value ? "Integer" : "Real"));
+		if
+		(
+			   !(this->_area_input_type_integral && this->_subject_count_output_type_integral)
+			&& !this->_subject_count_output_type_integral
+			&& !std::is_same<UnitOutputType, FASInteger>::value
+		)
+			logger.info("All output types are Real, the problem is continuous.");
+		else
+		if
+		(
+			   (this->_area_input_type_integral && this->_subject_count_output_type_integral)
+			&& this->_subject_count_output_type_integral
+			&& std::is_same<UnitOutputType, FASInteger>::value
+		)
+			logger.info("All output types are Integer, the problem is discrete.");
+		else
+			logger.info("Some output types are Integer, some output types are Real, the problem is mixed.");
 
 		// Define the interpretation of strategy blocks
 		std::map<_FacilityArrangementStrategy::_Algorithm, FacilityArrangementAlgorithm> algorithms;
