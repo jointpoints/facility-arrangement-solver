@@ -9,6 +9,7 @@
 
 
 
+#include "../Exception/Exception.hpp"
 #include <concepts>
 #include <cstdint>
 #include <memory>

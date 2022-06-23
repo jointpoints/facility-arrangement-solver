@@ -306,6 +306,13 @@ void Facility::arrange
 	if (logger_status_code != FASOLVER_LOGGER_STATUS_OK)
 		throw 1; // TODO
 	
+	// Check types
+	if (this->_subject_count_output_type_none)
+	{
+		logger.error("SubjectCountOutputType is set to None, the problem is ill-formed.");
+		throw PrerequisitesFailed("SubjectCountOutputType is set to None, the problem is ill-formed.");
+	}
+	
 	// Log strategy
 	{
 		std::map<_FacilityArrangementStrategy::_Algorithm, std::string> const algorithm_names
