@@ -36,3 +36,6 @@
 
 # Build folders
 /Facility Arrangement Solver (test build for Windows, v.0.1)
+
+# Python cache
+*.pyc
