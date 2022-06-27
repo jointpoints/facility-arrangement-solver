@@ -5,8 +5,6 @@ Author : Andrew Eliseev (JointPoints)
 '''
 from collections import namedtuple
 import json
-import os
-from tokenize import group
 
 
 
@@ -24,7 +22,10 @@ SubjectGroup = namedtuple('SubjectGroup', ('input_capacity', 'output_capacity', 
 
 
 
-Point = namedtuple('Point', ('x', 'y', 'area'))
+class Point:
+	def __init__(self, x, y, area):
+		self.x, self.y, self.area = x, y, area
+		return
 
 
 
@@ -35,17 +36,18 @@ def load_facility(path: str):
 			answer = json.load(f)
 		# Verify the format in metadata
 		if (not isinstance(answer, dict)) \
-		or ('' not in answer) \
-		or (not isinstance(answer[''], dict)) \
-		or ('created_by' not in answer['']) \
-		or ('version' not in answer['']) \
-		or ('type' not in answer['']) \
-		or (answer['']['type'] != 'fasf'):
+		or (set(answer.keys()) != {'meta', 'stuff'}) \
+		or (not isinstance(answer['meta'], dict)) \
+		or (not isinstance(answer['stuff'], dict)) \
+		or ('created_by' not in answer['meta']) \
+		or ('spec' not in answer['meta']) \
+		or ('type' not in answer['meta']) \
+		or (answer['meta']['type'] != 'fasf'):
 			raise RuntimeError('ERROR: Facility file must have a FASF format.')
-		if (answer['']['version'] != '1.0.0'):
+		if (answer['meta']['spec'] != '1.0.0'):
 			raise RuntimeError('ERROR: This version of FASF files is not supported.')
 		# Turn all other values to Points
-		del answer['']
+		answer = answer['stuff']
 		for point_name in answer:
 			answer[point_name] = Point(**answer[point_name])
 	except:
@@ -59,11 +61,11 @@ def save_facility(facility: "dict[str, Point]", path: str):
 	{
 		'created_by' : 'Facility Arrangement Solver for Python, 1.0.0',
 		'type'       : 'fasf',
-		'version'    : '1.0.0',
+		'spec'       : '1.0.0',
 	}
 	try:
 		with open(path, 'w') as f:
-			json.dump({**facility, '': facility_meta}, f, indent='\t', sort_keys=True, cls=FASJSONEncoder)
+			json.dump({'stuff' : facility, 'meta': facility_meta}, f, indent='\t', sort_keys=True, cls=FASJSONEncoder)
 	except:
 		print('ERROR: Invalid path to save facility.')
 	return

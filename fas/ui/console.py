@@ -14,6 +14,11 @@ def uiprint(output: str):
 
 
 
+def uiinput(info: str):
+	return input(' ║ │ ' + info)
+
+
+
 def uifinish(mode=None):
 	if mode != 'cls':
 		print(f' {"╨" if mode == "quit" else "║"} └' + '─' * 66)
