@@ -67,16 +67,21 @@ def parse_args(args):
 
 
 def run(**kwargs):
-	points = None
 	algo = \
 	{
 		'mip_linear' : arrange_0,
 	}
 	# Try to load facility
-	if os.path.isfile(kwargs['facility']):
+	try:
 		points = fas_load(kwargs['facility'], 'fasf')
-	else:
-		print('ERROR: Facility file is invalid.')
+	except RuntimeError as e:
+		print(e)
+		exit(1)
+	# Try to load subject groups
+	try:
+		groups = fas_load(kwargs['groups'], 'fasg')
+	except RuntimeError as e:
+		print(e)
 		exit(1)
 	return
 

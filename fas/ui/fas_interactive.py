@@ -102,6 +102,7 @@ Commands available within this editor:
 			except RuntimeError as e:
 				uiprint(f'    {e}')
 				continue
+	return
 
 
 

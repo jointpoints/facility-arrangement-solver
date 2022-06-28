@@ -84,7 +84,7 @@ class FASJSONEncoder(json.JSONEncoder):
 		elif isinstance(o, Point):
 			return {'x' : o.x, 'y' : o.y, 'area' : o.area}
 		elif isinstance(o, TotalFlows):
-			return {group_a : {o[(group_a, group_b)] for group_b in o.groups} for group_a in o.groups}
+			return {group_a : {group_b: o[(group_a, group_b)] for group_b in o.groups} for group_a in o.groups}
 		return super().default(o)
 
 
@@ -135,6 +135,7 @@ def fas_load(path: str, type: str):
 
 
 def fas_save(object, path: str, type: str):
+	assert type in {'fasf', 'fasg', 'fast', 'fasd'}
 	facility_meta = \
 	{
 		'created_by' : 'Facility Arrangement Solver for Python, 1.0.0',
