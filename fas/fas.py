@@ -74,7 +74,7 @@ def run(**kwargs):
 	}
 	# Try to load facility
 	if os.path.isfile(kwargs['facility']):
-		points = load_facility(kwargs['facility'])
+		points = fas_load(kwargs['facility'], 'fasf')
 	else:
 		print('ERROR: Facility file is invalid.')
 		exit(1)

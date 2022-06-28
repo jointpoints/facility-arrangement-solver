@@ -9,6 +9,112 @@ import os
 
 
 
+
+
+
+# Util
+
+
+
+
+
+
+def _editor(mode: str):
+	assert mode in {'fasf', 'fasg'}
+	fasf = (mode == 'fasf')
+	COL_1_LEN = 20
+	COL_2_LEN = 10
+	COL_3_LEN = 10
+	COL_4_LEN = 10
+	answer = {}
+	command = None
+	uiprint(f'Interactive {"facility" if fasf else "subject groups"} editor')
+	while command != 'quit':
+		uiprint(f'\nYour current {"facility" if fasf else "set of subject groups"}:')
+		uiprint(f' │{"Name of a point" if fasf else "Name of a group":^20}│{"x" if fasf else "Inp. cap.":^10}│{"y" if fasf else "Outp. cap.":^10}│{"Area":^10}│')
+		uiprint(f' ├{"─" * 20}┼{"─" * 10}┼{"─" * 10}┼{"─" * 10}┤')
+		if len(answer) == 0:
+			uiprint(f' │{"<empty facility>" if fasf else "<empty set of subjec groups>":^53}│')
+		else:
+			for name in answer:
+				uiprint(f' │{name:<20}│{answer[name].x if fasf else answer[name].input_capacity:>10}│{answer[name].y if fasf else answer[name].output_capacity:>10}│{answer[name].area:>10}│')
+		uiprint(f'''
+Commands available within this editor:
+ add  : Add a new {"point" if fasf else "subject group"} or modify an existing one.
+ del  : Remove an existing {"point" if fasf else "subject group"}.
+ load : Load {"a facility" if fasf else "groups"} from {mode.upper()} file (overrides current
+        progress).
+ quit : Exit the editor (disregards unsaved changes).
+ save : Save current {"facility" if fasf else "subject groups"} to a {mode.upper()} file.''')
+		command = uiinput('Your command: ')
+		# If user wants to add/edit a point/group
+		if command == 'add':
+			name = uiinput(f'    Enter the name of the {"point" if fasf else "group"}: ')
+			if len(name) > COL_1_LEN:
+				uiprint(f'    ERROR: The name is too long (max. {COL_1_LEN} symbols).')
+				continue
+			try:
+				field1 = abs(int(uiinput(f'    Enter the {"x coordinate" if fasf else "input capacity"}: ')))
+				if len(str(field1)) > COL_2_LEN:
+					uiprint(f'    ERROR: The {"x" if fasf else "input capacity"} is too long (max. {COL_2_LEN} symbols).')
+					continue
+			except:
+				uiprint(f'    ERROR: {"x" if fasf else "input capacity"} must be an integer.')
+				continue
+			try:
+				field2 = abs(int(uiinput(f'    Enter the {"y coordinate" if fasf else "output capacity"}: ')))
+				if len(str(field2)) > COL_3_LEN:
+					uiprint(f'    ERROR: The {"y" if fasf else "output capacity"} is too long (max. {COL_3_LEN} symbols).')
+					continue
+			except:
+				uiprint(f'    ERROR: {"y" if fasf else "output capacity"} must be an integer.')
+				continue
+			try:
+				area = abs(int(uiinput('    Enter the area: ')))
+				if len(str(area)) > COL_4_LEN:
+					uiprint(f'    ERROR: The area is too long (max. {COL_4_LEN} symbols).')
+					continue
+			except:
+				uiprint('    ERROR: Area must be an integer.')
+				continue
+			answer[name] = Point(field1, field2, area) if fasf else SubjectGroup(field1, field2, area)
+		# If user wants to delete a point/group
+		elif command == 'del':
+			name = uiinput(f'    Enter the name of the {"point" if fasf else "group"}: ')
+			if len(name) > COL_1_LEN:
+				uiprint(f'    ERROR: The name is too long (max. {COL_1_LEN} symbols).')
+				continue
+			if name in answer:
+				del answer[name]
+		# If user wants to load a facility/subject groups from a file
+		elif command == 'load':
+			path = uiinput(f'    Enter the path to a {mode.upper()} file: ')
+			try:
+				answer = fas_load(path, mode)
+			except RuntimeError as e:
+				uiprint(f'    {e}')
+				continue
+		# If user wants to save the current facility/subject groups
+		elif command == 'save':
+			path = uiinput(f'    Enter the path to a {mode.upper()} file: ')
+			try:
+				fas_save(answer, path, mode)
+			except RuntimeError as e:
+				uiprint(f'    {e}')
+				continue
+
+
+
+
+
+
+# Commands
+
+
+
+
+
+
 def cmd_cls():
 	os.system('cls' if os.name in ('nt', 'dos') else 'clear')
 	print('╔' + '═' * 68 + '╗')
@@ -24,86 +130,13 @@ def cmd_cls():
 
 
 def cmd_editf():
-	MAX_NAME_LEN = 20
-	MAX_X_LEN = 10
-	MAX_Y_LEN = 10
-	MAX_AREA_LEN = 10
-	points = {}
-	command = None
-	uiprint('Interactive facility editor')
-	while command != 'quit':
-		uiprint('\nYour current facility:')
-		uiprint(f' │{"Name of a point":^20}│{"x":^10}│{"y":^10}│{"Area":^10}│')
-		uiprint(f' ├{"─" * 20}┼{"─" * 10}┼{"─" * 10}┼{"─" * 10}┤')
-		if len(points) == 0:
-			uiprint(f' │{"<empty facility>":^53}│')
-		else:
-			for point_name in points:
-				uiprint(f' │{point_name:<20}│{points[point_name].x:>10}│{points[point_name].y:>10}│{points[point_name].area:>10}│')
-		uiprint('''
-Commands available within this editor:
- add  : Add a new point or modify an existing one.
- del  : Remove an existing point.
- load : Load a facility from FASF file (overrides the current
-        facility).
- quit : Exit the editor (disregards unsaved changes).
- save : Save current facility to a FASF file.''')
-		command = uiinput('Your command: ')
-		# If user wants to add/edit a point
-		if command == 'add':
-			point_name = uiinput('    Enter the name of the point: ')
-			if len(point_name) > MAX_NAME_LEN:
-				uiprint(f'    ERROR: The name is too long (max. {MAX_NAME_LEN} symbols).')
-				continue
-			try:
-				x = abs(int(uiinput('    Enter the x coordinate: ')))
-				if len(str(x)) > MAX_X_LEN:
-					uiprint(f'    ERROR: The x is too long (max. {MAX_X_LEN} symbols).')
-					continue
-			except:
-				uiprint('    ERROR: x must be an integer.')
-				continue
-			try:
-				y = abs(int(uiinput('    Enter the y coordinate: ')))
-				if len(str(y)) > MAX_Y_LEN:
-					uiprint(f'    ERROR: The y is too long (max. {MAX_Y_LEN} symbols).')
-					continue
-			except:
-				uiprint('    ERROR: y must be an integer.')
-				continue
-			try:
-				area = abs(int(uiinput('    Enter the area: ')))
-				if len(str(area)) > MAX_AREA_LEN:
-					uiprint(f'    ERROR: The area is too long (max. {MAX_AREA_LEN} symbols).')
-					continue
-			except:
-				uiprint('    ERROR: Area must be an integer.')
-				continue
-			points[point_name] = Point(x, y, area)
-		# If user wants to delete a point
-		elif command == 'del':
-			point_name = uiinput('    Enter the name of the point: ')
-			if len(point_name) > MAX_NAME_LEN:
-				uiprint(f'    ERROR: The name is too long (max. {MAX_NAME_LEN} symbols).')
-				continue
-			if point_name in points:
-				del points[point_name]
-		# If user wants to load a facility from a file
-		elif command == 'load':
-			facility_path = uiinput('    Enter the path to a FASF file: ')
-			try:
-				points = load_facility(facility_path)
-			except RuntimeError as e:
-				uiprint(f'    {e}')
-				continue
-		# If user wants to save the current facility
-		elif command == 'save':
-			facility_path = uiinput('    Enter the path to a FASF file: ')
-			try:
-				save_facility(points, facility_path)
-			except RuntimeError as e:
-				uiprint(f'    {e}')
-				continue
+	_editor('fasf')
+	return
+
+
+
+def cmd_editg():
+	_editor('fasg')
 	return
 
 
@@ -112,6 +145,7 @@ def cmd_help():
 	uiprint('''Availbale commands in interactive mode
  cls   : Clear console.
  editf : Edit facility or create a new one.
+ editg : Edit a set of subject groups or create a new one.
  help  : Show brief help message.
  hhelp : Show complete help message.
  quit  : Exit the program.
@@ -127,6 +161,7 @@ def cmd_hhelp():
 	uiprint('''Availbale commands in interactive mode
  cls   : Clear console.
  editf : Edit facility or create a new one.
+ editg : Edit a set of subject groups or create a new one.
  help  : Show brief help message.
  hhelp : Show complete help message.
  quit  : Exit the program.
@@ -174,6 +209,7 @@ def run():
 	{
 		'cls'   : cmd_cls,
 		'editf' : cmd_editf,
+		'editg' : cmd_editg,
 		'help'  : cmd_help,
 		'hhelp' : cmd_hhelp,
 	}
