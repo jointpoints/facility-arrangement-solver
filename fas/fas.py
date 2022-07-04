@@ -6,7 +6,6 @@ Author : Andrew Eliseev (JointPoints)
 from tools.arrangement import *
 from ui import fas_interactive
 from sys import argv
-import os
 
 
 
@@ -14,24 +13,27 @@ def parse_args(args):
 	answer = {}
 	arg_translate = \
 	{
-		'-o'          : 'output',
-		'--output'    : 'output',
-		'-f'          : 'facility',
-		'--facility'  : 'facility',
-		'-g'          : 'groups',
-		'--groups'    : 'groups',
-		'-a'          : 'algo',
-		'--algorithm' : 'algo',
-		'-d'          : 'dist',
-		'--distance'  : 'dist',
+		'-o'           : 'output',
+		'--output'     : 'output',
+		'-f'           : 'facility',
+		'--facility'   : 'facility',
+		'-g'           : 'groups',
+		'--groups'     : 'groups',
+		'-t'           : 'total_flows',
+		'--totalflows' : 'total_flows',
+		'-a'           : 'algo',
+		'--algorithm'  : 'algo',
+		'-d'           : 'dist',
+		'--distance'   : 'dist',
 	}
 	arg_specification = \
 	{
-		'output'   : {None},
-		'facility' : {None},
-		'groups'   : {None},
-		'algo'     : {'mip_linear', 'mip_cubic'},
-		'dist'     : {f'm{N}' for N in range(1, 51)} | {'moo', None},
+		'output'      : {None},
+		'facility'    : {None},
+		'groups'      : {None},
+		'total_flows' : {None},
+		'algo'        : {'mip_linear', 'mip_cubic'},
+		'dist'        : {f'm{N}' for N in range(1, 51)} | {'moo', None},
 	}
 	arg_expected = True
 	curr_arg = None
@@ -71,18 +73,25 @@ def run(**kwargs):
 	{
 		'mip_linear' : arrange_0,
 	}
-	# Try to load facility
+	# Try to load data
 	try:
 		points = fas_load(kwargs['facility'], 'fasf')
-	except RuntimeError as e:
-		print(e)
-		exit(1)
-	# Try to load subject groups
-	try:
 		groups = fas_load(kwargs['groups'], 'fasg')
+		total_flows = fas_load(kwargs['total_flows'], 'fast')
 	except RuntimeError as e:
 		print(e)
 		exit(1)
+	# Compute the distance
+	distance = {}
+	if kwargs['dist'] in {f'm{_}' for _ in range(1, 51)}:
+		order = int(kwargs['dist'][1:])
+		for point1_name in points:
+			for point2_name in points:
+				if order == 1:
+					distance[(point1_name, point2_name)] = abs(points[point1_name].x - points[point2_name].x) + abs(points[point1_name].y - points[point2_name].y)
+				else:
+					distance[(point1_name, point2_name)] = (abs(points[point1_name].x - points[point2_name].x)**order + abs(points[point1_name].y - points[point2_name].y)**order)**(1/order)
+	algo[kwargs['algo']](points, distance, groups, total_flows)
 	return
 
 

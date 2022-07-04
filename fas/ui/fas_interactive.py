@@ -19,7 +19,7 @@ import os
 
 
 
-def _editor(mode: str):
+def _editorfg(mode: str):
 	assert mode in {'fasf', 'fasg'}
 	fasf = (mode == 'fasf')
 	COL_1_LEN = 20
@@ -42,7 +42,7 @@ def _editor(mode: str):
 Commands available within this editor:
  add  : Add a new {"point" if fasf else "subject group"} or modify an existing one.
  del  : Remove an existing {"point" if fasf else "subject group"}.
- load : Load {"a facility" if fasf else "groups"} from {mode.upper()} file (overrides current
+ load : Load {"a facility" if fasf else "subject groups"} from {mode.upper()} file (overrides current
         progress).
  quit : Exit the editor (disregards unsaved changes).
  save : Save current {"facility" if fasf else "subject groups"} to a {mode.upper()} file.''')
@@ -106,6 +106,68 @@ Commands available within this editor:
 
 
 
+def _editortd(mode: str):
+	assert mode in {'fast', 'fasd'}
+	fast = (mode == 'fast')
+	COL_1_LEN = 20
+	COL_2_LEN = 20
+	COL_3_LEN = 10
+	answer = None
+	command = None
+	uiprint(f'Interactive {"total flows" if fast else "distance"} editor')
+	while command != 'quit':
+		if answer == None:
+			uiprint(f'''
+Commands available within this editor:
+ load : Load a {"set of total flows" if fast else "distance"} from {mode.upper()} file.
+ new  : Create a new {"set of total flows" if fast else "distance"}.
+ quit : Exit the editor.''')
+		else:
+			uiprint(f'''
+Commands available within this editor:
+ edit : Change value for a certain pair of {"subject groups" if fast else "points"}.
+ load : Load a {"set of total flows" if fast else "distance"} from {mode.upper()} file (overrides
+        current progress).
+ new  : Create a new {"set of total flows" if fast else "distance"} (disregards unsaved
+        changes).
+ quit : Exit the editor (disregards unsaved changes).
+ save : Save current {"total flows" if fast else "distance"} to a {mode.upper()} file.
+ show : Print current {"set of total flows" if fast else "distance"}.''')
+		command = uiinput('Your command: ')
+		# If user wants to create a new set/distance
+		if command == 'new':
+			uiprint(f'    {"Total flows" if fast else "Distance"} must be associated with certain {"subject groups" if fast else "facility"}.')
+			path = uiinput(f'    Enter the path to the associated {"FASG" if fast else "FASF"} file: ')
+			try:
+				associated = fas_load(path, 'fasg' if fast else 'fasf')
+				answer = TotalFlows(associated) if fast else None
+			except RuntimeError as e:
+				uiprint(str(e))
+				answer = None
+				continue
+			data_container = answer.total_flow if fast else answer
+			for name1 in answer.groups if fast else answer:
+				for name2 in answer.groups if fast else answer:
+					try:
+						data_container[(name1, name2)] = abs(int(uiinput(f'    Enter {"flow" if fast else "distance"} from {name1} to {name2}: ')))
+					except:
+						uiprint(f'    {"Flow" if fast else "Distance"} must be {"integer" if fast else "a number"}.')
+						answer = None
+						break
+				else:
+					continue
+				break
+		# If user wants to save the current facility/subject groups
+		elif command == 'save':
+			path = uiinput(f'    Enter the path to a {mode.upper()} file: ')
+			try:
+				fas_save(answer, path, mode)
+			except RuntimeError as e:
+				uiprint(f'    {e}')
+				continue
+
+
+
 
 
 
@@ -131,13 +193,19 @@ def cmd_cls():
 
 
 def cmd_editf():
-	_editor('fasf')
+	_editorfg('fasf')
 	return
 
 
 
 def cmd_editg():
-	_editor('fasg')
+	_editorfg('fasg')
+	return
+
+
+
+def cmd_editt():
+	_editortd('fast')
 	return
 
 
@@ -147,6 +215,7 @@ def cmd_help():
  cls   : Clear console.
  editf : Edit facility or create a new one.
  editg : Edit a set of subject groups or create a new one.
+ editt : Edit a set of total flows or create a new one.
  help  : Show brief help message.
  hhelp : Show complete help message.
  quit  : Exit the program.
@@ -163,6 +232,7 @@ def cmd_hhelp():
  cls   : Clear console.
  editf : Edit facility or create a new one.
  editg : Edit a set of subject groups or create a new one.
+ editt : Edit a set of total flows or create a new one.
  help  : Show brief help message.
  hhelp : Show complete help message.
  quit  : Exit the program.
@@ -211,6 +281,7 @@ def run():
 		'cls'   : cmd_cls,
 		'editf' : cmd_editf,
 		'editg' : cmd_editg,
+		'editt' : cmd_editt,
 		'help'  : cmd_help,
 		'hhelp' : cmd_hhelp,
 	}

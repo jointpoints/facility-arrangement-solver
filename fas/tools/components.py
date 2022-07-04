@@ -45,9 +45,13 @@ class Point:
 
 
 class TotalFlows:
-	def __init__(self, groups: "dict[str, SubjectGroup]"):
-		self.total_flow = {(i, j) : 0 for i in groups for j in groups}
-		self.groups = tuple(groups.keys())
+	def __init__(self, groups: "dict[str, SubjectGroup]" = None, flows: "dict[str, dict[str, int]]" = None):
+		if groups != None:
+			self.total_flow = {(i, j) : 0 for i in groups for j in groups}
+			self.groups = tuple(groups.keys())
+		else:
+			self.total_flow = {(i, j) : flows[i][j] for i in flows for j in flows}
+			self.groups = tuple(flows.keys())
 		return
 
 	def set_flow(self, group_a: str, group_b: str, new_flow: int):
@@ -126,8 +130,11 @@ def fas_load(path: str, type: str):
 			raise RuntimeError('ERROR: This version of file is not supported.')
 		# Deserialise the data
 		answer = answer['stuff']
-		for name in answer:
-			answer[name] = type_class[type](**answer[name])
+		if type == 'fast':
+			answer = TotalFlows(flows=answer)
+		else:
+			for name in answer:
+				answer[name] = type_class[type](**answer[name])
 	except:
 		raise RuntimeError(f'ERROR: Invalid {type.upper()} file.')
 	return answer
