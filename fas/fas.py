@@ -91,7 +91,11 @@ def run(**kwargs):
 					distance[(point1_name, point2_name)] = abs(points[point1_name].x - points[point2_name].x) + abs(points[point1_name].y - points[point2_name].y)
 				else:
 					distance[(point1_name, point2_name)] = (abs(points[point1_name].x - points[point2_name].x)**order + abs(points[point1_name].y - points[point2_name].y)**order)**(1/order)
-	algo[kwargs['algo']](points, distance, groups, total_flows)
+	elif kwargs['dist'] == 'moo':
+		for point1_name in points:
+			for point2_name in points:
+				distance[(point1_name, point2_name)] = max(abs(points[point1_name].x - points[point2_name].x), abs(points[point1_name].y - points[point2_name].y))
+	algo[kwargs['algo']](points, distance, groups, total_flows, kwargs['output'])
 	return
 
 

@@ -8,7 +8,7 @@ import cplex
 
 
 
-def arrange_0(points: "dict[str, Point]", distance, groups: "dict[str, SubjectGroup]", total_flows: TotalFlows):
+def arrange_0(points: "dict[str, Point]", distance, groups: "dict[str, SubjectGroup]", total_flows: TotalFlows, arrangement_path: str = None):
 	ceil = lambda x: x if x == int(x) else int(x) + 1
 	# Compute the sufficient number of subjects for each group
 	total_subject_count = {i : max(ceil(total_flows.get_in_flow(i) / groups[i].input_capacity), ceil(total_flows.get_out_flow(i) / groups[i].output_capacity)) for i in groups}
@@ -107,6 +107,13 @@ def arrange_0(points: "dict[str, Point]", distance, groups: "dict[str, SubjectGr
 		)
 	# Solve
 	cplex_model.solve()
-	if (cplex_model.solution.get_status() != 103):
-		cplex_model.solution.write('test.sol')
+	if (cplex_model.solution.get_status() == 103):
+		raise RuntimeError('ERROR: No feasible solution.')
+	# Save the solution
+	if arrangement_path != None:
+		try:
+			cplex_model.solution.write(arrangement_path)
+		except:
+			cplex_model.solution.write('bad_output_file_name_emergency_save.sol')
+
 	return

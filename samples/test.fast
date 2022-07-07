@@ -1,0 +1,24 @@
+{
+	"meta": {
+		"created_by": "Facility Arrangement Solver for Python, 1.0.0",
+		"spec": "1.0.0",
+		"type": "fast"
+	},
+	"stuff": {
+		"A": {
+			"A": 0,
+			"B": 55,
+			"C": 45
+		},
+		"B": {
+			"A": 0,
+			"B": 0,
+			"C": 40
+		},
+		"C": {
+			"A": 0,
+			"B": 0,
+			"C": 0
+		}
+	}
+}
