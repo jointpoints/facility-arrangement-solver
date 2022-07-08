@@ -134,8 +134,45 @@ Commands available within this editor:
  save : Save current {"total flows" if fast else "distance"} to a {mode.upper()} file.
  show : Print current {"set of total flows" if fast else "distance"}.''')
 		command = uiinput('Your command: ')
-		# If user wants to create a new set/distance
-		if command == 'new':
+		# If user wants to add/edit a point/group
+		if command == 'edit' and answer != None:
+			name1 = uiinput(f'    Enter the name of the source {"subject group" if fast else "point"}: ')
+			if len(name1) > COL_1_LEN:
+				uiprint(f'    ERROR: The name is too long (max. {COL_1_LEN} symbols).')
+				continue
+			if name1 not in (answer.groups if fast else answer):
+				uiprint(f'    ERROR: Unknown {"subject group" if fast else "point"}.')
+				continue
+			name2 = uiinput(f'    Enter the name of the target {"subject group" if fast else "point"}: ')
+			if len(name2) > COL_2_LEN:
+				uiprint(f'    ERROR: The name is too long (max. {COL_2_LEN} symbols).')
+				continue
+			if name2 not in (answer.groups if fast else answer):
+				uiprint(f'    ERROR: Unknown {"subject group" if fast else "point"}.')
+				continue
+			try:
+				new_value = abs((int if fast else float)(uiinput('    Enter new value: ')))
+				if len(str(new_value)) > COL_3_LEN:
+					uiprint(f'    ERROR: The value is too long (max. {COL_3_LEN} symbols).')
+					continue
+			except:
+				uiprint('    ERROR: Wrong format of the value.')
+				continue
+			if fast:
+				answer.total_flow[(name1, name2)] = new_value
+			else:
+				answer[(name1, name2)] = new_value
+		# If user wants to load a facility/subject groups from a file
+		elif command == 'load':
+			path = uiinput(f'    Enter the path to a {mode.upper()} file: ')
+			try:
+				answer = fas_load(path, mode)
+			except RuntimeError as e:
+				uiprint(f'    {e}')
+				answer = None
+				continue
+		# If user wants to create new total flows/distance
+		elif command == 'new':
 			uiprint(f'    {"Total flows" if fast else "Distance"} must be associated with certain {"subject groups" if fast else "facility"}.')
 			path = uiinput(f'    Enter the path to the associated {"FASG" if fast else "FASF"} file: ')
 			try:
@@ -157,7 +194,7 @@ Commands available within this editor:
 				else:
 					continue
 				break
-		# If user wants to save the current facility/subject groups
+		# If user wants to save the current total flows/distance
 		elif command == 'save':
 			path = uiinput(f'    Enter the path to a {mode.upper()} file: ')
 			try:
@@ -165,6 +202,14 @@ Commands available within this editor:
 			except RuntimeError as e:
 				uiprint(f'    {e}')
 				continue
+		# If user wants to see the table with all the values
+		elif command == 'show' and answer != None:
+			uiprint(f'\nYour current {"set of total flows" if fast else "distance"}:')
+			uiprint(f' │{"Group 1" if fast else "Point 1":^20}│{"Group 2" if fast else "Point 2":^20}│{"Value":^10}│')
+			uiprint(f' ├{"─" * 20}┼{"─" * 20}┼{"─" * 10}┤')
+			for name in (answer.total_flow if fast else answer):
+				uiprint(f' │{name[0]:<20}│{name[1]:<20}│{(answer.total_flow if fast else answer)[name]:>10}│')
+	return
 
 
 
