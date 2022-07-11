@@ -35,7 +35,7 @@ def arrange_0(points: "dict[str, Point]", distance, groups: "dict[str, SubjectGr
 	cplex_model.variables.add \
 	(
 		names=[f'g({i})[{u}]' for i in groups for u in points],
-		lb=[0 if total_production_count[i] >= 0 else total_production_count[i] for i in groups for u in points],
+		lb=[-total_production_count[i] if total_production_count[i] >= 0 else total_production_count[i] for i in groups for u in points],
 		ub=[total_production_count[i] if total_production_count[i] >= 0 else 0 for i in groups for u in points],
 		types=[cplex_model.variables.type.integer] * len(groups) * len(points)
 	)

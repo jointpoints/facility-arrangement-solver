@@ -1,0 +1,29 @@
+{
+	"meta": {
+		"created_by": "Facility Arrangement Solver for Python, 1.0.0",
+		"spec": "1.0.0",
+		"type": "fasg"
+	},
+	"stuff": {
+		"A": {
+			"area": 1,
+			"input_capacity": 1,
+			"output_capacity": 7
+		},
+		"B": {
+			"area": 1,
+			"input_capacity": 8,
+			"output_capacity": 50
+		},
+		"C": {
+			"area": 1,
+			"input_capacity": 200,
+			"output_capacity": 100
+		},
+		"D": {
+			"area": 1,
+			"input_capacity": 6,
+			"output_capacity": 1
+		}
+	}
+}

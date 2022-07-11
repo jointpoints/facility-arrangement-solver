@@ -5,22 +5,22 @@
 		"type": "fasg"
 	},
 	"stuff": {
-		"A": {
+		"raw milk delivery": {
 			"area": 2,
 			"input_capacity": 1,
 			"output_capacity": 25
 		},
-		"B": {
+		"pasteuriser": {
 			"area": 3,
 			"input_capacity": 60,
 			"output_capacity": 50
 		},
-		"C": {
+		"cooler": {
 			"area": 2,
 			"input_capacity": 10,
 			"output_capacity": 10
 		},
-		"D": {
+		"packaging": {
 			"area": 5,
 			"input_capacity": 100,
 			"output_capacity": 1

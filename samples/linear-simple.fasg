@@ -5,17 +5,17 @@
 		"type": "fasg"
 	},
 	"stuff": {
-		"A": {
+		"storage": {
 			"area": 1,
 			"input_capacity": 1,
 			"output_capacity": 30
 		},
-		"B": {
+		"assembly line": {
 			"area": 1,
 			"input_capacity": 25,
 			"output_capacity": 20
 		},
-		"C": {
+		"quality control": {
 			"area": 1,
 			"input_capacity": 100,
 			"output_capacity": 1

@@ -1,0 +1,24 @@
+{
+	"meta": {
+		"created_by": "Facility Arrangement Solver for Python, 1.0.0",
+		"spec": "1.0.0",
+		"type": "fast"
+	},
+	"stuff": {
+		"storage": {
+			"storage": 0,
+			"assembly line": 100,
+			"quality control": 0
+		},
+		"assembly line": {
+			"storage": 0,
+			"assembly line": 0,
+			"quality control": 55
+		},
+		"quality control": {
+			"storage": 0,
+			"assembly line": 0,
+			"quality control": 0
+		}
+	}
+}
