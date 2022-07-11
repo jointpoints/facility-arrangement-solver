@@ -1,0 +1,53 @@
+Default row    names c1, c2 ... being created.
+Default objective names obj1, obj2 ... being created.
+Version identifier: 20.1.0.0 | 2020-11-10 | 9bedb6d68
+CPXPARAM_Read_DataCheck                          1
+Found incumbent of value 378.000000 after 0.02 sec. (0.07 ticks)
+Tried aggregator 1 time.
+MIP Presolve eliminated 0 rows and 225 columns.
+MIP Presolve added 5460 rows and 2730 columns.
+Reduced MIP has 5490 rows, 2955 columns, and 11370 nonzeros.
+Reduced MIP has 2955 binaries, 0 generals, 0 SOSs, and 0 indicators.
+Presolve time = 0.00 sec. (0.99 ticks)
+Probing time = 0.00 sec. (1.39 ticks)
+Tried aggregator 1 time.
+Detecting symmetries...
+MIP Presolve eliminated 2730 rows and 0 columns.
+Reduced MIP has 2760 rows, 2955 columns, and 8640 nonzeros.
+Reduced MIP has 2955 binaries, 0 generals, 0 SOSs, and 0 indicators.
+Presolve time = 0.02 sec. (11.99 ticks)
+Classifier predicts products in MIQP should be linearized.
+Probing time = 0.00 sec. (3.86 ticks)
+Clique table members: 30.
+MIP emphasis: balance optimality and feasibility.
+MIP search method: dynamic search.
+Parallel mode: deterministic, using up to 12 threads.
+Root relaxation solution time = 0.09 sec. (6.65 ticks)
+
+        Nodes                                         Cuts/
+   Node  Left     Objective  IInf  Best Integer    Best Bound    ItCnt     Gap
+
+*     0+    0                          378.0000        0.0000           100.00%
+*     0+    0                          325.0000        0.0000           100.00%
+      0     0        0.0000    38      325.0000        0.0000      141  100.00%
+*     0+    0                          290.0000        0.0000           100.00%
+*     0+    0                          209.0000        0.0000           100.00%
+      0     0        0.0000    41      209.0000      Cuts: 79      183  100.00%
+      0     0        0.0000    41      209.0000      Cuts: 72      243  100.00%
+*     0+    0                          191.0000        0.0000           100.00%
+      0     2        0.0000    41      191.0000       61.1237      243   68.00%
+Elapsed time = 0.69 sec. (267.13 ticks, tree = 0.02 MB, solutions = 5)
+   1438    13    infeasible            191.0000      183.0000    13668    4.19%
+
+Implied bound cuts applied:  98
+Zero-half cuts applied:  8
+Lift and project cuts applied:  1
+
+Root node processing (before b&c):
+  Real time             =    0.66 sec. (265.82 ticks)
+Parallel b&c, 12 threads:
+  Real time             =    0.80 sec. (261.63 ticks)
+  Sync time (average)   =    0.26 sec.
+  Wait time (average)   =    0.00 sec.
+                          ------------
+Total (root+branch&cut) =    1.45 sec. (527.45 ticks)

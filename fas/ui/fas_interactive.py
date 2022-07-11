@@ -288,7 +288,8 @@ Required arguments
  -o <fileo>
  --output <fileo> : The path to the output file. Output file will
         contain information about the arrangement produced by the
-        program. Arrangement will be saved in FASA format.
+        program. Format of the output file depends on the chosen
+        arrangement algorithm.
  -f <filef>
  --facility <filef> : The path to a facility layout file in FASF
         format.
@@ -303,9 +304,11 @@ Optional arguments
  --algorithm <valuea> : The algorithm to use for arrangement.
         Possible values of <valuea> are:
          mip_linear : Sets up a mixed integer linear optimisation
-                      problem to be solved with CPLEX.
+                      problem to be solved with CPLEX. Saves ar-
+                      rangement in SOL format.
          mip_cubic  : Sets up a mixed integer cubic optimisation
-                      problem to be solved with CPLEX.
+                      problem to be solved with CPLEX. Saves ar-
+                      rangement in SOL format.
         Omitting this argument is equivalent to -a mip_linear.
  -d (mN|moo|<filed>)
  --distance (mN|moo|<filed>) : The distance to use for computati-
@@ -314,7 +317,11 @@ Optional arguments
                    of order N.
          moo     : Sets up Minkowski distance of order infinity.
          <filed> : The path to the distance file in FASD format.
-        Omitting this argument is equivalent to -d m2.''')
+        Omitting this argument is equivalent to -d m2.
+ -l <filel>
+ --log <filel> : The path to a log file.
+        Omitting this argument will lead to logs being printed in
+        console.''')
 	return
 
 

@@ -25,6 +25,8 @@ def parse_args(args):
 		'--algorithm'  : 'algo',
 		'-d'           : 'dist',
 		'--distance'   : 'dist',
+		'-l'           : 'log',
+		'--log'        : 'log',
 	}
 	arg_specification = \
 	{
@@ -34,6 +36,7 @@ def parse_args(args):
 		'total_flows' : {None},
 		'algo'        : {'mip_linear', 'mip_cubic'},
 		'dist'        : {f'm{N}' for N in range(1, 51)} | {'moo', None},
+		'log'         : {None}
 	}
 	arg_expected = True
 	curr_arg = None
@@ -59,6 +62,8 @@ def parse_args(args):
 		answer['algo'] = 'mip_linear'
 	if 'dist' not in answer:
 		answer['dist'] = 'm2'
+	if 'log' not in answer:
+		answer['log'] = None
 	if ('output' not in answer) or ('facility' not in answer) or ('groups' not in answer):
 		print('ERROR: One or more required arguments are missing. To get help execute:')
 		print('\tpython fas.py')
@@ -95,7 +100,7 @@ def run(**kwargs):
 		for point1_name in points:
 			for point2_name in points:
 				distance[(point1_name, point2_name)] = max(abs(points[point1_name].x - points[point2_name].x), abs(points[point1_name].y - points[point2_name].y))
-	algo[kwargs['algo']](points, distance, groups, total_flows, kwargs['output'])
+	algo[kwargs['algo']](points, distance, groups, total_flows, kwargs['output'], kwargs['log'])
 	return
 
 

@@ -10,7 +10,7 @@ import json
 
 
 
-# Subject group
+# Componenets
 
 
 
@@ -24,23 +24,10 @@ class SubjectGroup:
 
 
 
-
-
-
-# Point/facility
-
-
-
-
-
-
 class Point:
 	def __init__(self, x: int, y: int, area: int):
 		self.x, self.y, self.area = x, y, area
 		return
-
-
-
 
 
 
