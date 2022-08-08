@@ -4,12 +4,13 @@ Version: 1.0.0
 Author : Andrew Eliseev (JointPoints)
 '''
 from tools.components import *
+from re import match
 import sys
 import cplex
 
 
 
-def arrange_0(points: "dict[str, Point]", distance, groups: "dict[str, SubjectGroup]", total_flows: TotalFlows, arrangement_path: str = None, log_path: str = None, is_fas_interactive: bool = False):
+def arrange_cplex_compressed_linear(points: "dict[str, Point]", distance, groups: "dict[str, SubjectGroup]", total_flows: TotalFlows, arrangement_path: str = None, log_path: str = None, grid_size: tuple = None, is_fas_interactive: bool = False):
 	ceil = lambda x: x if x == int(x) else int(x) + 1
 	# Compute the sufficient number of subjects for each group
 	total_subject_count = {i : max(ceil(total_flows.get_in_flow(i) / groups[i].input_capacity), ceil(total_flows.get_out_flow(i) / groups[i].output_capacity)) for i in groups}
@@ -106,12 +107,40 @@ def arrange_0(points: "dict[str, Point]", distance, groups: "dict[str, SubjectGr
 			senses=('L',),
 			rhs=(points[u].area,)
 		)
+	# Grid-specific constraints
+	if grid_size != None:
+		cplex_constr_grid_first_row = cplex.SparsePair \
+		(
+			ind=tuple(f'n({i})[({x},0)]' for i in groups for x in range(grid_size[0])),
+			val=(1,) * len(groups) * grid_size[0]
+		)
+		cplex_constr_grid_first_column = cplex.SparsePair \
+		(
+			ind=tuple(f'n({i})[(0,{y})]' for i in groups for y in range(grid_size[1])),
+			val=(1,) * len(groups) * grid_size[1]
+		)
+		cplex_constr_grid_left_half = cplex.SparsePair \
+		(
+			ind=tuple(f'n({i})[({x},{y})]' for i in groups for x in range(grid_size[0]) for y in range(grid_size[1])),
+			val=tuple(1 if x <= ceil(grid_size[0] / 2) else -1 for i in groups for x in range(grid_size[0]) for y in range(grid_size[1]))
+		)
+		cplex_constr_grid_upper_half = cplex.SparsePair \
+		(
+			ind=tuple(f'n({i})[({x},{y})]' for i in groups for x in range(grid_size[0]) for y in range(grid_size[1])),
+			val=tuple(1 if x <= ceil(grid_size[1] / 2) else -1 for i in groups for x in range(grid_size[0]) for y in range(grid_size[1]))
+		)
+		cplex_model.linear_constraints.add \
+		(
+			lin_expr=(cplex_constr_grid_first_row, cplex_constr_grid_first_column, cplex_constr_grid_left_half, cplex_constr_grid_upper_half),
+			senses=('G', 'G', 'G', 'G'),
+			rhs=(1, 1, 0, 0)
+		)
 	# Set up logs
 	if log_path != None:
 		try:
 			log_file = open(log_path, 'w')
 		except:
-			log_file = open('bad_log_file_name_emergency_save.log', 'w')
+			log_file = open('bad_log_file_name_backup_save.log', 'w')
 		cplex_model.set_log_stream(log_file)
 		cplex_model.set_error_stream(log_file)
 		cplex_model.set_warning_stream(log_file)
@@ -130,7 +159,7 @@ def arrange_0(points: "dict[str, Point]", distance, groups: "dict[str, SubjectGr
 		try:
 			cplex_model.solution.write(arrangement_path)
 		except:
-			cplex_model.solution.write('bad_output_file_name_emergency_save.sol')
+			cplex_model.solution.write('bad_output_file_name_backup_save.sol')
 	# Close all streams
 	if log_path != None:
 		log_file.close()

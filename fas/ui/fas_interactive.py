@@ -34,7 +34,7 @@ def _editorfg(mode: str):
 		uiprint(f' │{"Name of a point" if fasf else "Name of a group":^20}│{"x" if fasf else "Inp. cap.":^10}│{"y" if fasf else "Outp. cap.":^10}│{"Area":^10}│')
 		uiprint(f' ├{"─" * 20}┼{"─" * 10}┼{"─" * 10}┼{"─" * 10}┤')
 		if len(answer) == 0:
-			uiprint(f' │{"<empty facility>" if fasf else "<empty set of subjec groups>":^53}│')
+			uiprint(f' │{"<empty facility>" if fasf else "<empty set of subject groups>":^53}│')
 		else:
 			for name in answer:
 				uiprint(f' │{name:<20}│{answer[name].x if fasf else answer[name].input_capacity:>10}│{answer[name].y if fasf else answer[name].output_capacity:>10}│{answer[name].area:>10}│')
@@ -266,7 +266,7 @@ def cmd_help():
  quit  : Exit the program.
 
 Command line syntax
- python fas.py -o <fileo> -f <filef> -g <fileg> -t <filet> [...]
+ python fas.py -o <fileo> -f <valuef> -g <fileg> -t <filet> [...]
 To get more information, type "hhelp".''')
 	return
 
@@ -283,16 +283,27 @@ def cmd_hhelp():
  quit  : Exit the program.
 
 Command line syntax
- python fas.py -o <fileo> -f <filef> -g <fileg> -t <filet> [...]
+ python fas.py -o <fileo> -f <valuef> -g <fileg> -t <filet> [...]
 Required arguments
  -o <fileo>
  --output <fileo> : The path to the output file. Output file will
         contain information about the arrangement produced by the
-        program. Format of the output file depends on the chosen
-        arrangement algorithm.
+        program. Output file is saved in SOL format.
  -f <filef>
- --facility <filef> : The path to a facility layout file in FASF
-        format.
+ --facility <valuef> : The facility layout. Possible values of
+        <valuef> are:
+         <pathf> : The path to a facility layout file in FASF
+                   format.
+         gN:HxM:WxA : A grid facility with N rows and M columns.
+                      The distance between any two consecutive
+                      rows is H. The distance between any two
+                      consecutive columns is W. Each point has
+                      the area A. N, M, and A must be natural, H
+                      and W must be positive.
+        Note, that passing gN:HxM:WxA as the value might also
+        enable some additional modifications in the algorithms to
+        allow a faster convergence to an answer. To disable these
+        modifications, use --forcevanilla argument (see below).
  -g <fileg>
  --groups <fileg> : The path to a subject groups description file
         in FASG format.
@@ -303,13 +314,15 @@ Optional arguments
  -a <valuea>
  --algorithm <valuea> : The algorithm to use for arrangement.
         Possible values of <valuea> are:
-         mip_linear : Sets up a mixed integer linear optimisation
-                      problem to be solved with CPLEX. Saves ar-
-                      rangement in SOL format.
-         mip_cubic  : Sets up a mixed integer cubic optimisation
-                      problem to be solved with CPLEX. Saves ar-
-                      rangement in SOL format.
-        Omitting this argument is equivalent to -a mip_linear.
+         cplex_linear : Use CPLEX solver to solve an integer
+                        optimisation problem using the linear
+                        model.
+         cplex_compressed_linear : Use CPLEX solver to solve an
+                                   integer optimisation problem
+                                   using the compressed linear
+                                   model.
+        Omitting this argument is equivalent to -a
+        cplex_compressed_linear.
  -d (mN|moo|<filed>)
  --distance (mN|moo|<filed>) : The distance to use for computati-
         ons. The values have the following effect:
@@ -318,6 +331,12 @@ Optional arguments
          moo     : Sets up Minkowski distance of order infinity.
          <filed> : The path to the distance file in FASD format.
         Omitting this argument is equivalent to -d m2.
+ --forcevanilla : Disable all possible optimisations of arrange-
+        ment algorithms designed for grid facility layouts. Omit-
+        ting this argument will lead to the usage of special
+        versions of the algorithms that will accelerate computa-
+        tions for grid facilities. Thus, the usage of this argu-
+        ment is only reasonable for benchmarking purposes.
  -l <filel>
  --log <filel> : The path to a log file.
         Omitting this argument will lead to logs being printed in
