@@ -36,7 +36,7 @@ def parse_args(args):
 		'facility'      : {None},
 		'groups'        : {None},
 		'total_flows'   : {None},
-		'algo'          : {'linear', 'cpr_linear', 'cpr_linear_gfred'},
+		'algo'          : {'linear', 'cpr_linear', 'linear_gfred', 'cpr_linear_gfred'},
 		'dist'          : {f'm{N}' for N in range(1, 51)} | {'moo', None},
 		'force_vanilla' : {0},
 		'log'           : {None},
@@ -83,7 +83,9 @@ def parse_args(args):
 def run(**kwargs):
 	algo = \
 	{
+		'linear'           : arrange_linear,
 		'cpr_linear'       : arrange_cpr_linear,
+		'linear_gfred'     : arrange_linear_gfred,
 		'cpr_linear_gfred' : arrange_cpr_linear_gfred,
 	}
 	# Try to load data
