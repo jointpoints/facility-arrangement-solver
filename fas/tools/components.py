@@ -140,5 +140,5 @@ def fas_save(object, path: str, type: str):
 		with open(path, 'w') as f:
 			json.dump({'stuff' : object, 'meta': facility_meta}, f, indent='\t', sort_keys=True, cls=FASJSONEncoder)
 	except:
-		print('ERROR: Invalid path.')
+		raise RuntimeError('ERROR: Invalid path.')
 	return

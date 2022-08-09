@@ -36,7 +36,7 @@ def parse_args(args):
 		'facility'      : {None},
 		'groups'        : {None},
 		'total_flows'   : {None},
-		'algo'          : {'cplex_linear', 'cplex_compressed_linear'},
+		'algo'          : {'linear', 'cpr_linear', 'cpr_linear_gfred'},
 		'dist'          : {f'm{N}' for N in range(1, 51)} | {'moo', None},
 		'force_vanilla' : {0},
 		'log'           : {None},
@@ -64,7 +64,7 @@ def parse_args(args):
 				exit(1)
 		arg_expected = (not arg_expected) or (0 in arg_specification[curr_arg])
 	if 'algo' not in answer:
-		answer['algo'] = 'cplex_compressed_linear'
+		answer['algo'] = 'cpr_linear'
 	if 'dist' not in answer:
 		answer['dist'] = 'm2'
 	if 'force_vanilla' not in answer:
@@ -83,7 +83,8 @@ def parse_args(args):
 def run(**kwargs):
 	algo = \
 	{
-		'cplex_compressed_linear' : arrange_cplex_compressed_linear,
+		'cpr_linear'       : arrange_cpr_linear,
+		'cpr_linear_gfred' : arrange_cpr_linear_gfred,
 	}
 	# Try to load data
 	try:
@@ -128,7 +129,10 @@ def run(**kwargs):
 			for point2_name in points:
 				distance[(point1_name, point2_name)] = max(abs(points[point1_name].x - points[point2_name].x), abs(points[point1_name].y - points[point2_name].y))
 	# Run an arrangement algorithm
-	algo[kwargs['algo']](points, distance, groups, total_flows, kwargs['output'], kwargs['log'], grid_size)
+	try:
+		algo[kwargs['algo']](points, distance, groups, total_flows, kwargs['output'], kwargs['log'], grid_size)
+	except RuntimeError as e:
+		print(e)
 	return
 
 

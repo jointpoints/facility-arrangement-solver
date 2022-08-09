@@ -28,7 +28,7 @@ def _editorfg(mode: str):
 	COL_4_LEN = 10
 	answer = {}
 	command = None
-	uiprint(f'Interactive {"facility" if fasf else "subject groups"} editor')
+	uiprint(f'\033[4mInteractive {"facility" if fasf else "subject groups"} editor\033[0m')
 	while command != 'quit':
 		uiprint(f'\nYour current {"facility" if fasf else "set of subject groups"}:')
 		uiprint(f' │{"Name of a point" if fasf else "Name of a group":^20}│{"x" if fasf else "Inp. cap.":^10}│{"y" if fasf else "Outp. cap.":^10}│{"Area":^10}│')
@@ -39,13 +39,13 @@ def _editorfg(mode: str):
 			for name in answer:
 				uiprint(f' │{name:<20}│{answer[name].x if fasf else answer[name].input_capacity:>10}│{answer[name].y if fasf else answer[name].output_capacity:>10}│{answer[name].area:>10}│')
 		uiprint(f'''
-Commands available within this editor:
- add  : Add a new {"point" if fasf else "subject group"} or modify an existing one.
- del  : Remove an existing {"point" if fasf else "subject group"}.
- load : Load {"a facility" if fasf else "subject groups"} from {mode.upper()} file (overrides current
+\033[4mCommands available within this editor:\033[0m
+ \033[1madd\033[0m  : Add a new {"point" if fasf else "subject group"} or modify an existing one.
+ \033[1mdel\033[0m  : Remove an existing {"point" if fasf else "subject group"}.
+ \033[1mload\033[0m : Load {"a facility" if fasf else "subject groups"} from {mode.upper()} file (overrides current
         progress).
- quit : Exit the editor (disregards unsaved changes).
- save : Save current {"facility" if fasf else "subject groups"} to a {mode.upper()} file.''')
+ \033[1mquit\033[0m : Exit the editor (disregards unsaved changes).
+ \033[1msave\033[0m : Save current {"facility" if fasf else "subject groups"} to a {mode.upper()} file.''')
 		command = uiinput('Your command: ')
 		# If user wants to add/edit a point/group
 		if command == 'add':
@@ -114,25 +114,25 @@ def _editortd(mode: str):
 	COL_3_LEN = 10
 	answer = None
 	command = None
-	uiprint(f'Interactive {"total flows" if fast else "distance"} editor')
+	uiprint(f'\033[4mInteractive {"total flows" if fast else "distance"} editor\033[0m')
 	while command != 'quit':
 		if answer == None:
 			uiprint(f'''
-Commands available within this editor:
- load : Load a {"set of total flows" if fast else "distance"} from {mode.upper()} file.
- new  : Create a new {"set of total flows" if fast else "distance"}.
- quit : Exit the editor.''')
+\033[4mCommands available within this editor:\033[0m
+ \033[1mload\033[0m : Load a {"set of total flows" if fast else "distance"} from {mode.upper()} file.
+ \033[1mnew\033[0m  : Create a new {"set of total flows" if fast else "distance"}.
+ \033[1mquit\033[0m : Exit the editor.''')
 		else:
 			uiprint(f'''
-Commands available within this editor:
- edit : Change value for a certain pair of {"subject groups" if fast else "points"}.
- load : Load a {"set of total flows" if fast else "distance"} from {mode.upper()} file (overrides
+\033[4mCommands available within this editor:\033[0m
+ \033[1medit\033[0m : Change value for a certain pair of {"subject groups" if fast else "points"}.
+ \033[1mload\033[0m : Load a {"set of total flows" if fast else "distance"} from {mode.upper()} file (overrides
         current progress).
- new  : Create a new {"set of total flows" if fast else "distance"} (disregards unsaved
+ \033[1mnew\033[0m  : Create a new {"set of total flows" if fast else "distance"} (disregards unsaved
         changes).
- quit : Exit the editor (disregards unsaved changes).
- save : Save current {"total flows" if fast else "distance"} to a {mode.upper()} file.
- show : Print current {"set of total flows" if fast else "distance"}.''')
+ \033[1mquit\033[0m : Exit the editor (disregards unsaved changes).
+ \033[1msave\033[0m : Save current {"total flows" if fast else "distance"} to a {mode.upper()} file.
+ \033[1mshow\033[0m : Print current {"set of total flows" if fast else "distance"}.''')
 		command = uiinput('Your command: ')
 		# If user wants to add/edit a point/group
 		if command == 'edit' and answer != None:
@@ -256,16 +256,16 @@ def cmd_editt():
 
 
 def cmd_help():
-	uiprint('''Availbale commands in interactive mode
- cls   : Clear console.
- editf : Edit facility or create a new one.
- editg : Edit a set of subject groups or create a new one.
- editt : Edit a set of total flows or create a new one.
- help  : Show brief help message.
- hhelp : Show complete help message.
- quit  : Exit the program.
+	uiprint('''\033[4mAvailbale commands in interactive mode\033[0m
+ \033[1mcls\033[0m   : Clear console.
+ \033[1meditf\033[0m : Edit facility or create a new one.
+ \033[1meditg\033[0m : Edit a set of subject groups or create a new one.
+ \033[1meditt\033[0m : Edit a set of total flows or create a new one.
+ \033[1mhelp\033[0m  : Show brief help message.
+ \033[1mhhelp\033[0m : Show complete help message.
+ \033[1mquit\033[0m  : Exit the program.
 
-Command line syntax
+\033[4mCommand line syntax\033[0m
  python fas.py -o <fileo> -f <valuef> -g <fileg> -t <filet> [...]
 To get more information, type "hhelp".''')
 	return
@@ -273,24 +273,24 @@ To get more information, type "hhelp".''')
 
 
 def cmd_hhelp():
-	uiprint('''Availbale commands in interactive mode
- cls   : Clear console.
- editf : Edit facility or create a new one.
- editg : Edit a set of subject groups or create a new one.
- editt : Edit a set of total flows or create a new one.
- help  : Show brief help message.
- hhelp : Show complete help message.
- quit  : Exit the program.
+	uiprint('''\033[4mAvailbale commands in interactive mode\033[0m
+ \033[1mcls\033[0m   : Clear console.
+ \033[1meditf\033[0m : Edit facility or create a new one.
+ \033[1meditg\033[0m : Edit a set of subject groups or create a new one.
+ \033[1meditt\033[0m : Edit a set of total flows or create a new one.
+ \033[1mhelp\033[0m  : Show brief help message.
+ \033[1mhhelp\033[0m : Show complete help message.
+ \033[1mquit\033[0m  : Exit the program.
 
-Command line syntax
+\033[4mCommand line syntax\033[0m
  python fas.py -o <fileo> -f <valuef> -g <fileg> -t <filet> [...]
-Required arguments
- -o <fileo>
- --output <fileo> : The path to the output file. Output file will
+\033[4mRequired arguments\033[0m
+ \033[1m-o <fileo>\033[0m
+ \033[1m--output <fileo>\033[0m : The path to the output file. Output file will
         contain information about the arrangement produced by the
         program. Output file is saved in SOL format.
- -f <filef>
- --facility <valuef> : The facility layout. Possible values of
+ \033[1m-f <filef>\033[0m
+ \033[1m--facility <valuef>\033[0m : The facility layout. Possible values of
         <valuef> are:
          <pathf> : The path to a facility layout file in FASF
                    format.
@@ -304,41 +304,51 @@ Required arguments
         enable some additional modifications in the algorithms to
         allow a faster convergence to an answer. To disable these
         modifications, use --forcevanilla argument (see below).
- -g <fileg>
- --groups <fileg> : The path to a subject groups description file
+ \033[1m-g <fileg>\033[0m
+ \033[1m--groups <fileg>\033[0m : The path to a subject groups description file
         in FASG format.
- -t <filet>
- -totalflows <filet> : The path to a total flows description file
+ \033[1m-t <filet>\033[0m
+ \033[1m-totalflows <filet>\033[0m : The path to a total flows description file
         in FAST format.
-Optional arguments
- -a <valuea>
- --algorithm <valuea> : The algorithm to use for arrangement.
+\033[4mOptional arguments\033[0m
+ \033[1m-a <valuea>\033[0m
+ \033[1m--algorithm <valuea>\033[0m : The algorithm to use for arrangement.
         Possible values of <valuea> are:
-         cplex_linear : Use CPLEX solver to solve an integer
-                        optimisation problem using the linear
-                        model.
-         cplex_compressed_linear : Use CPLEX solver to solve an
-                                   integer optimisation problem
-                                   using the compressed linear
-                                   model.
-        Omitting this argument is equivalent to -a
-        cplex_compressed_linear.
- -d (mN|moo|<filed>)
- --distance (mN|moo|<filed>) : The distance to use for computati-
+         linear : Use CPLEX solver to solve an integer optimisa-
+                  tion problem using the linear model. This algo-
+                  rithm produces an \033[4moptimal\033[0m solution.
+         cpr_linear : Use CPLEX solver to solve an integer opti-
+                      misation problem using the compressed line-
+                      ar model. This algorithm produces an \033[4mopti-\033[0m
+                      \033[4mmal\033[0m solution.
+         cpr_linear_gfred : Use CPLEX solver to solve multiple
+                            integer optimisation problems using
+                            the compressed linear model on faci-
+                            lities of reduced sizes. This algo-
+                            rithm only works with grid facili-
+                            ties. Calling it with any other faci-
+                            lity is equivalent to -a cpr_linear.
+                            Calling it with --forcevanilla is
+                            equivalent to -a cpr_linear
+                            --forcevanilla. This algorithm produ-
+                            ces a \033[4msuboptimal\033[0m solution unless pro-
+                            ven otherwise.
+        Omitting this argument is equivalent to -a cpr_linear.
+ \033[1m-d (mN|moo|<filed>)\033[0m
+ \033[1m--distance (mN|moo|<filed>)\033[0m : The distance to use for computati-
         ons. The values have the following effect:
-         mN      : N = 1, 2, ..., 50. Sets up Minkowski distance
-                   of order N.
-         moo     : Sets up Minkowski distance of order infinity.
+         mN      : N = 1, 2, ..., 50. Sets Minkowski distance of
+                   order N.
+         moo     : Sets Minkowski distance of the infinte order.
          <filed> : The path to the distance file in FASD format.
         Omitting this argument is equivalent to -d m2.
- --forcevanilla : Disable all possible optimisations of arrange-
-        ment algorithms designed for grid facility layouts. Omit-
-        ting this argument will lead to the usage of special
-        versions of the algorithms that will accelerate computa-
-        tions for grid facilities. Thus, the usage of this argu-
-        ment is only reasonable for benchmarking purposes.
- -l <filel>
- --log <filel> : The path to a log file.
+ \033[1m--forcevanilla\033[0m : Disable all possible optimisations designed for
+        grid facility layouts. Omitting this argument will lead
+        to the usage of special versions of the arrangement algo-
+        rithms that may accelerate computations for grid facili-
+        lities.
+ \033[1m-l <filel>\033[0m
+ \033[1m--log <filel>\033[0m : The path to a log file.
         Omitting this argument will lead to logs being printed in
         console.''')
 	return

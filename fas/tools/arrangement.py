@@ -4,13 +4,12 @@ Version: 1.0.0
 Author : Andrew Eliseev (JointPoints)
 '''
 from tools.components import *
-from re import match
 import sys
 import cplex
 
 
 
-def arrange_cplex_compressed_linear(points: "dict[str, Point]", distance, groups: "dict[str, SubjectGroup]", total_flows: TotalFlows, arrangement_path: str = None, log_path: str = None, grid_size: tuple = None, is_fas_interactive: bool = False):
+def arrange_cpr_linear(points: "dict[str, Point]", distance, groups: "dict[str, SubjectGroup]", total_flows: TotalFlows, arrangement_path: str = None, log_path: str = None, grid_size: tuple = None, is_fas_interactive: bool = False):
 	ceil = lambda x: x if x == int(x) else int(x) + 1
 	# Compute the sufficient number of subjects for each group
 	total_subject_count = {i : max(ceil(total_flows.get_in_flow(i) / groups[i].input_capacity), ceil(total_flows.get_out_flow(i) / groups[i].output_capacity)) for i in groups}
@@ -164,7 +163,33 @@ def arrange_cplex_compressed_linear(points: "dict[str, Point]", distance, groups
 	if log_path != None:
 		log_file.close()
 
-	return
+	return cplex_model.solution.get_objective_value()
+
+
+
+def arrange_cpr_linear_gfred(points: "dict[str, Point]", distance, groups: "dict[str, SubjectGroup]", total_flows: TotalFlows, arrangement_path: str = None, log_path: str = None, grid_size: tuple = None, is_fas_interactive: bool = False):
+	if grid_size == None:
+		return arrange_cpr_linear(points, distance, groups, total_flows, arrangement_path, log_path, grid_size, is_fas_interactive)
+	stop_condition = False
+	curr_column_count = 1
+	curr_row_count = 1
+	prev_objective = None
+	curr_objective = None
+	# Solve a cascade of reduced problems
+	while (not stop_condition) and ((curr_column_count < grid_size[0]) or (curr_row_count < grid_size[1])):
+		reduced_points = {f'({x},{y})' : points[f'({x},{y})'] for x in range(curr_column_count) for y in range(curr_row_count)}
+		prev_objective = curr_objective
+		try:
+			curr_objective = arrange_cpr_linear(reduced_points, distance, groups, total_flows, arrangement_path, log_path, (curr_column_count, curr_row_count), is_fas_interactive)
+			stop_condition = prev_objective == curr_objective
+		except RuntimeError:
+			pass
+		curr_column_count += 1 if curr_column_count < grid_size[0] else 0
+		curr_row_count += 1 if curr_row_count < grid_size[1] else 0
+	if curr_objective == None:
+		raise RuntimeError('ERROR: No feasible solution.')
+
+	return curr_objective
 
 
 
