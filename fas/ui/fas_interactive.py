@@ -54,20 +54,20 @@ def _editorfg(mode: str):
 				uiprint(f'    ERROR: The name is too long (max. {COL_1_LEN} symbols).')
 				continue
 			try:
-				field1 = abs(int(uiinput(f'    Enter the {"x coordinate" if fasf else "input capacity"}: ')))
+				field1 = float(uiinput('    Enter the x coordinate: ')) if fasf else abs(int(uiinput('    Enter the input capacity: ')))
 				if len(str(field1)) > COL_2_LEN:
 					uiprint(f'    ERROR: The {"x" if fasf else "input capacity"} is too long (max. {COL_2_LEN} symbols).')
 					continue
 			except:
-				uiprint(f'    ERROR: {"x" if fasf else "input capacity"} must be an integer.')
+				uiprint(f'    ERROR: {"x" if fasf else "input capacity"} must be {"a real number" if fasf else "an integer"}.')
 				continue
 			try:
-				field2 = abs(int(uiinput(f'    Enter the {"y coordinate" if fasf else "output capacity"}: ')))
+				field2 = float(uiinput('    Enter the y coordinate: ')) if fasf else abs(int(uiinput('    Enter the output capacity: ')))
 				if len(str(field2)) > COL_3_LEN:
 					uiprint(f'    ERROR: The {"y" if fasf else "output capacity"} is too long (max. {COL_3_LEN} symbols).')
 					continue
 			except:
-				uiprint(f'    ERROR: {"y" if fasf else "output capacity"} must be an integer.')
+				uiprint(f'    ERROR: {"y" if fasf else "output capacity"} must be {"a real number" if fasf else "an integer"}.')
 				continue
 			try:
 				area = abs(int(uiinput('    Enter the area: ')))
