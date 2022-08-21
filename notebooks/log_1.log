@@ -1,0 +1,51 @@
+Version identifier: 20.1.0.0 | 2020-11-10 | 9bedb6d68
+CPXPARAM_Read_DataCheck                          1
+Found incumbent of value 378.000000 after 0.00 sec. (0.11 ticks)
+Tried aggregator 1 time.
+MIP Presolve eliminated 0 rows and 225 columns.
+MIP Presolve added 9880 rows and 4940 columns.
+Reduced MIP has 9915 rows, 5240 columns, and 20360 nonzeros.
+Reduced MIP has 5240 binaries, 0 generals, 0 SOSs, and 0 indicators.
+Presolve time = 0.00 sec. (1.63 ticks)
+Probing time = 0.00 sec. (2.72 ticks)
+Tried aggregator 1 time.
+Detecting symmetries...
+MIP Presolve eliminated 4940 rows and 0 columns.
+Reduced MIP has 4975 rows, 5240 columns, and 15420 nonzeros.
+Reduced MIP has 5240 binaries, 0 generals, 0 SOSs, and 0 indicators.
+Presolve time = 0.02 sec. (21.24 ticks)
+Classifier predicts products in MIQP should be linearized.
+Probing time = 0.02 sec. (2.59 ticks)
+Clique table members: 35.
+MIP emphasis: balance optimality and feasibility.
+MIP search method: dynamic search.
+Parallel mode: deterministic, using up to 12 threads.
+Root relaxation solution time = 0.02 sec. (10.52 ticks)
+
+        Nodes                                         Cuts/
+   Node  Left     Objective  IInf  Best Integer    Best Bound    ItCnt     Gap
+
+*     0+    0                          378.0000        0.0000           100.00%
+      0     0        0.0000    30      378.0000        0.0000      149  100.00%
+*     0+    0                          209.0000        0.0000           100.00%
+      0     0        0.0000    42      209.0000      Cuts: 34      188  100.00%
+*     0+    0                          206.0000        0.0000           100.00%
+      0     0        0.0000    42      206.0000      Cuts: 56      249  100.00%
+*     0+    0                          185.0000        0.0000           100.00%
+      0     2        0.0000    42      185.0000        0.0000      249  100.00%
+Elapsed time = 0.58 sec. (474.47 ticks, tree = 0.02 MB, solutions = 4)
+*   193    87      integral     0      184.0000      162.0000     3502   11.96%
+    930   242    infeasible            184.0000      176.0000     7343    4.35%
+
+Implied bound cuts applied:  71
+Zero-half cuts applied:  12
+Gomory fractional cuts applied:  2
+
+Root node processing (before b&c):
+  Real time             =    0.56 sec. (472.20 ticks)
+Parallel b&c, 12 threads:
+  Real time             =    0.89 sec. (292.02 ticks)
+  Sync time (average)   =    0.24 sec.
+  Wait time (average)   =    0.00 sec.
+                          ------------
+Total (root+branch&cut) =    1.45 sec. (764.22 ticks)

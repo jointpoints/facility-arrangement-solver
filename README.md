@@ -2,13 +2,7 @@
 
 ## Brief
 
-A tool to arrange *subjects* (such as departments, machines, etc.) within the given
-facility layout. Subjects can be categorised into *groups* or *types*. Subjects within
-one type share common properties. Facility workflow is modelled via interactions between
-different types of subjects. For more delails, see the manual *(will be available as soon
-as time allows)*.
-
-> The tool is in the early stage of development.
+A tool to arrange *subjects* (such as departments, machines, etc.) within the given facility. Subjects are categorised into *groups*. Subjects within one group share common properties and are mutually interchangeable in the production pipeline. Workflow within the facility is modelled via interactions between different subjects. For more delails, see the Wiki pages.
 
 ## External dependencies
 
@@ -16,17 +10,33 @@ This tool relies on the following external packages:
 
 * [CPLEX](https://www.ibm.com/products/ilog-cplex-optimization-studio)
 	* Proprietary software by IBM.
-	* Not supplied together with the source code in this repository, acquisition of
-	licensed copy on your own is required.
+	* Not supplied together with the source code in this repository, acquisition of a licensed copy on your own is required.
 
-## Compilation
+## Installation
 
-Unfortunately, CPLEX requires the use of
-[bloody MSVC](https://community.ibm.com/community/user/datascience/communities/community-home/digestviewer/viewthread?MessageKey=efd94ad6-215c-42f2-9491-2cb9f45a93da&CommunityKey=ab7de0fd-6f43-47a9-8261-33578a231bb7)
-to properly compile on Windows which might cause additional troubles to you. Install
-[MSVC build tools](https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2022)
-if you don't want to install Visual Studio.
+Before you can use Facility Arrangement Solver, you will have to install:
 
-On Linux, the use of G++ is sufficient.
+* Python 3.8,
+* `cplex` module for the respective version of Python.
 
-To get more details about the compilation, navigate to `/tools` folder.
+##### 1. Installation of Python
+
+Go to [the official web-site](https://www.python.org/downloads/) of Python and download the distributive of Python 3.8 that is compatible with your system. Complete the installation, add the path to the executable file to the PATH system variable.
+
+##### 2. Installation of `cplex` module
+
+Visit `/cplex/python/3.8/S` folder contained within your main CPLEX directory substituting `S` with your system name (will be the only folder in `/cplex/python/3.8`). In this folder, you will find a file called `setup.py`. Open a terminal in this folder and run
+
+    python setup.py install
+
+##### 3. Installation of Facility Arrangement Solver
+
+Download the latest release of Facility Arrangement Solver, unpack the archive into whatever folder you prefer.
+
+## Usage
+
+Open a terminal in the folder where you unpacked the archive with Facility Arrangement Solver. Run
+
+    python fas.py
+
+For more tips, see the Wiki section of this repository.

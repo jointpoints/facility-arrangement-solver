@@ -1,0 +1,29 @@
+{
+	"meta": {
+		"created_by": "Facility Arrangement Solver for Python, 1.0.0",
+		"spec": "1.0.0",
+		"type": "fasg"
+	},
+	"stuff": {
+		"raw milk delivery": {
+			"area": 2,
+			"input_capacity": 1,
+			"output_capacity": 25
+		},
+		"pasteuriser": {
+			"area": 3,
+			"input_capacity": 60,
+			"output_capacity": 50
+		},
+		"cooler": {
+			"area": 2,
+			"input_capacity": 10,
+			"output_capacity": 10
+		},
+		"packaging": {
+			"area": 5,
+			"input_capacity": 100,
+			"output_capacity": 1
+		}
+	}
+}
