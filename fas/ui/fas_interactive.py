@@ -352,7 +352,8 @@ def cmd_hhelp():
          mN      : N = 1, 2, ..., 50. Sets Minkowski distance of
                    order N.
          moo     : Sets Minkowski distance of the infinte order.
-         <filed> : The path to a distance file in FASD format.
+         <filed> : The path to a distance file in FASD format
+                   (feature is under development).
         Omitting this argument is equivalent to -d m2.
  \033[1m--forcevanilla\033[0m : Disable all possible optimisations designed for
         grid facility layouts. Omitting this argument will lead
