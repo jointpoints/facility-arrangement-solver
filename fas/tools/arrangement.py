@@ -12,7 +12,7 @@ import cplex
 def arrange_linear(points: "dict[str, Point]", distance, groups: "dict[str, SubjectGroup]", total_flows: TotalFlows, arrangement_path: str = None, log_path: str = None, grid_size: tuple = None, is_fas_interactive: bool = False):
 	ceil = lambda x: x if x == int(x) else int(x) + 1
 	# Compute the sufficient number of subjects for each group
-	total_subject_count = {i : max(ceil(total_flows.get_in_flow(i) / groups[i].input_capacity), ceil(total_flows.get_out_flow(i) / groups[i].output_capacity)) for i in groups}
+	total_subject_count = {i : int(max(ceil(total_flows.get_in_flow(i) / groups[i].input_capacity), ceil(total_flows.get_out_flow(i) / groups[i].output_capacity))) for i in groups}
 	# Compute total production by each subject group
 	total_production_count = {i : total_flows.get_out_flow(i) - total_flows.get_in_flow(i) for i in groups}
 	# CPLEX model
@@ -126,21 +126,28 @@ def arrange_linear(points: "dict[str, Point]", distance, groups: "dict[str, Subj
 			ind=tuple(f'b({i}:{p})[(0,{y})]' for i in groups for p in range(total_subject_count[i]) for y in range(grid_size[1])),
 			val=(1,) * sum(total_subject_count.values()) * grid_size[1]
 		)
-		cplex_constr_grid_left_half = cplex.SparsePair \
-		(
-			ind=tuple(f'b({i}:{p})[({x},{y})]' for i in groups for p in range(total_subject_count[i]) for x in range(grid_size[0]) for y in range(grid_size[1])),
-			val=tuple(1 if x <= ceil(grid_size[0] / 2) else -1 for i in groups for p in range(total_subject_count[i]) for x in range(grid_size[0]) for y in range(grid_size[1]))
-		)
-		cplex_constr_grid_upper_half = cplex.SparsePair \
-		(
-			ind=tuple(f'b({i}:{p})[({x},{y})]' for i in groups for p in range(total_subject_count[i]) for x in range(grid_size[0]) for y in range(grid_size[1])),
-			val=tuple(1 if x <= ceil(grid_size[1] / 2) else -1 for i in groups for p in range(total_subject_count[i]) for x in range(grid_size[0]) for y in range(grid_size[1]))
-		)
+		if grid_size[2] == 1:
+			cplex_constr_grid_left_half = cplex.SparsePair \
+			(
+				ind=tuple(f'b({i}:{p})[({x},{y})]' for i in groups for p in range(total_subject_count[i]) for x in range(grid_size[0]) for y in range(grid_size[1])),
+				val=tuple(1 if x <= ceil(grid_size[0] / 2) else -1 for i in groups for p in range(total_subject_count[i]) for x in range(grid_size[0]) for y in range(grid_size[1]))
+			)
+			cplex_constr_grid_upper_half = cplex.SparsePair \
+			(
+				ind=tuple(f'b({i}:{p})[({x},{y})]' for i in groups for p in range(total_subject_count[i]) for x in range(grid_size[0]) for y in range(grid_size[1])),
+				val=tuple(1 if x <= ceil(grid_size[1] / 2) else -1 for i in groups for p in range(total_subject_count[i]) for x in range(grid_size[0]) for y in range(grid_size[1]))
+			)
+			cplex_model.linear_constraints.add \
+			(
+				lin_expr=(cplex_constr_grid_left_half, cplex_constr_grid_upper_half),
+				senses=('G', 'G'),
+				rhs=(0, 0)
+			)
 		cplex_model.linear_constraints.add \
 		(
-			lin_expr=(cplex_constr_grid_first_row, cplex_constr_grid_first_column, cplex_constr_grid_left_half, cplex_constr_grid_upper_half),
-			senses=('G', 'G', 'G', 'G'),
-			rhs=(1, 1, 0, 0)
+			lin_expr=(cplex_constr_grid_first_row, cplex_constr_grid_first_column),
+			senses=(('E', 'G')[grid_size[2]], ('E', 'G')[grid_size[2]]),
+			rhs=(grid_size[2], grid_size[2])
 		)
 	# Set up logs
 	if log_path != None:
@@ -158,8 +165,9 @@ def arrange_linear(points: "dict[str, Point]", distance, groups: "dict[str, Subj
 		cplex_model.set_warning_stream(sys.stderr, lambda x : ' ║ │' + x)
 		cplex_model.set_results_stream(sys.stderr, lambda x : ' ║ │' + x)
 	# Solve
+	#cplex_model.parameters.timelimit.set(1200)
 	cplex_model.solve()
-	if (cplex_model.solution.get_status() == 103):
+	if cplex_model.solution.get_status() == 103:
 		raise RuntimeError('ERROR: No feasible solution.')
 	# Save the solution
 	if arrangement_path != None:
@@ -286,21 +294,28 @@ def arrange_cpr_linear(points: "dict[str, Point]", distance, groups: "dict[str, 
 			ind=tuple(f'n({i})[(0,{y})]' for i in groups for y in range(grid_size[1])),
 			val=(1,) * len(groups) * grid_size[1]
 		)
-		cplex_constr_grid_left_half = cplex.SparsePair \
-		(
-			ind=tuple(f'n({i})[({x},{y})]' for i in groups for x in range(grid_size[0]) for y in range(grid_size[1])),
-			val=tuple(1 if x <= ceil(grid_size[0] / 2) else -1 for i in groups for x in range(grid_size[0]) for y in range(grid_size[1]))
-		)
-		cplex_constr_grid_upper_half = cplex.SparsePair \
-		(
-			ind=tuple(f'n({i})[({x},{y})]' for i in groups for x in range(grid_size[0]) for y in range(grid_size[1])),
-			val=tuple(1 if x <= ceil(grid_size[1] / 2) else -1 for i in groups for x in range(grid_size[0]) for y in range(grid_size[1]))
-		)
+		if grid_size[2] == 1:
+			cplex_constr_grid_left_half = cplex.SparsePair \
+			(
+				ind=tuple(f'n({i})[({x},{y})]' for i in groups for x in range(grid_size[0]) for y in range(grid_size[1])),
+				val=tuple(1 if x <= ceil(grid_size[0] / 2) else -1 for i in groups for x in range(grid_size[0]) for y in range(grid_size[1]))
+			)
+			cplex_constr_grid_upper_half = cplex.SparsePair \
+			(
+				ind=tuple(f'n({i})[({x},{y})]' for i in groups for x in range(grid_size[0]) for y in range(grid_size[1])),
+				val=tuple(1 if x <= ceil(grid_size[1] / 2) else -1 for i in groups for x in range(grid_size[0]) for y in range(grid_size[1]))
+			)
+			cplex_model.linear_constraints.add \
+			(
+				lin_expr=(cplex_constr_grid_left_half, cplex_constr_grid_upper_half),
+				senses=('G', 'G'),
+				rhs=(0, 0)
+			)
 		cplex_model.linear_constraints.add \
 		(
-			lin_expr=(cplex_constr_grid_first_row, cplex_constr_grid_first_column, cplex_constr_grid_left_half, cplex_constr_grid_upper_half),
-			senses=('G', 'G', 'G', 'G'),
-			rhs=(1, 1, 0, 0)
+			lin_expr=(cplex_constr_grid_first_row, cplex_constr_grid_first_column),
+			senses=(('E', 'G')[grid_size[2]], ('E', 'G')[grid_size[2]]),
+			rhs=(grid_size[2], grid_size[2])
 		)
 	# Set up logs
 	if log_path != None:
@@ -318,8 +333,9 @@ def arrange_cpr_linear(points: "dict[str, Point]", distance, groups: "dict[str, 
 		cplex_model.set_warning_stream(sys.stderr, lambda x : ' ║ │' + x)
 		cplex_model.set_results_stream(sys.stderr, lambda x : ' ║ │' + x)
 	# Solve
+	#cplex_model.parameters.timelimit.set(1200)
 	cplex_model.solve()
-	if (cplex_model.solution.get_status() == 103):
+	if cplex_model.solution.get_status() == 103:
 		raise RuntimeError('ERROR: No feasible solution.')
 	# Save the solution
 	if arrangement_path != None:
@@ -355,14 +371,16 @@ def _arrange_gfred(algo: str, points: "dict[str, Point]", distance, groups: "dic
 		reduced_points = {f'({x},{y})' : points[f'({x},{y})'] for x in range(curr_column_count) for y in range(curr_row_count)}
 		prev_objective = curr_objective
 		try:
-			curr_objective = algo(reduced_points, distance, groups, total_flows, arrangement_path, log_path, (curr_column_count, curr_row_count), is_fas_interactive)
+			curr_objective = algo(reduced_points, distance, groups, total_flows, arrangement_path, log_path, (curr_column_count, curr_row_count, 0), is_fas_interactive)
 			stop_condition = prev_objective == curr_objective
 		except RuntimeError:
 			pass
 		curr_column_count += 1 if curr_column_count < grid_size[0] else 0
 		curr_row_count += 1 if curr_row_count < grid_size[1] else 0
 	if curr_objective == None:
-		raise RuntimeError('ERROR: No feasible solution.')
+		curr_objective = algo(points, distance, groups, total_flows, arrangement_path, log_path, grid_size, is_fas_interactive)
+		if curr_objective == None:
+			raise RuntimeError('ERROR: No feasible solution.')
 
 	return curr_objective
 

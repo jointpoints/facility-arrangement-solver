@@ -104,7 +104,7 @@ def run(**kwargs):
 			if row_count * column_count * area == 0:
 				raise ValueError()
 			points = {f'({i},{j})' : Point(column_step * i, row_step * j, area) for i in range(column_count) for j in range(row_count)}
-			grid_size = (column_count, row_count) if not kwargs['force_vanilla'] else None
+			grid_size = (column_count, row_count, 1) if not kwargs['force_vanilla'] else None
 		else:
 			points = fas_load(kwargs['facility'], 'fasf')
 			grid_size = None
