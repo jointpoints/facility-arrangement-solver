@@ -28,7 +28,7 @@ def _editorfg(mode: str):
 	COL_4_LEN = 10
 	answer = {}
 	command = None
-	uiprint(f'\033[4mInteractive {"facility" if fasf else "subject groups"} editor\033[0m')
+	uiprint(f'\033[4mInteractive {"facility" if fasf else "subject groups"} editor\033[0m:')
 	while command != 'quit':
 		uiprint(f'\nYour current {"facility" if fasf else "set of subject groups"}:')
 		uiprint(f' │{"Name of a point" if fasf else "Name of a group":^20}│{"x" if fasf else "Inp. cap.":^10}│{"y" if fasf else "Outp. cap.":^10}│{"Area":^10}│')
@@ -39,7 +39,7 @@ def _editorfg(mode: str):
 			for name in answer:
 				uiprint(f' │{name:<20}│{answer[name].x if fasf else answer[name].input_capacity:>10}│{answer[name].y if fasf else answer[name].output_capacity:>10}│{answer[name].area:>10}│')
 		uiprint(f'''
-\033[4mCommands available within this editor:\033[0m
+\033[4mCommands available within this editor\033[0m:
  \033[1madd\033[0m  : Add a new {"point" if fasf else "subject group"} or modify an existing one.
  \033[1mdel\033[0m  : Remove an existing {"point" if fasf else "subject group"}.
  \033[1mload\033[0m : Load {"a facility" if fasf else "subject groups"} from {mode.upper()} file (overrides current
@@ -114,17 +114,17 @@ def _editortd(mode: str):
 	COL_3_LEN = 10
 	answer = None
 	command = None
-	uiprint(f'\033[4mInteractive {"total flows" if fast else "distance"} editor\033[0m')
+	uiprint(f'\033[4mInteractive {"total flows" if fast else "distance"} editor\033[0m:')
 	while command != 'quit':
 		if answer == None:
 			uiprint(f'''
-\033[4mCommands available within this editor:\033[0m
+\033[4mCommands available within this editor\033[0m:
  \033[1mload\033[0m : Load a {"set of total flows" if fast else "distance"} from {mode.upper()} file.
  \033[1mnew\033[0m  : Create a new {"set of total flows" if fast else "distance"}.
  \033[1mquit\033[0m : Exit the editor.''')
 		else:
 			uiprint(f'''
-\033[4mCommands available within this editor:\033[0m
+\033[4mCommands available within this editor\033[0m:
  \033[1medit\033[0m : Change value for a certain pair of {"subject groups" if fast else "points"}.
  \033[1mload\033[0m : Load a {"set of total flows" if fast else "distance"} from {mode.upper()} file (overrides
         current progress).
@@ -237,6 +237,12 @@ def cmd_cls():
 
 
 
+def cmd_editd():
+	_editortd('fasd')
+	return
+
+
+
 def cmd_editf():
 	_editorfg('fasf')
 	return
@@ -273,7 +279,7 @@ To get more information, type "hhelp".''')
 
 
 def cmd_hhelp():
-	uiprint('''\033[4mAvailbale commands in interactive mode\033[0m
+	uiprint('''\033[4mAvailbale commands in interactive mode\033[0m:
  \033[1mcls\033[0m   : Clear console.
  \033[1meditf\033[0m : Edit facility or create a new one.
  \033[1meditg\033[0m : Edit a set of subject groups or create a new one.
@@ -282,9 +288,9 @@ def cmd_hhelp():
  \033[1mhhelp\033[0m : Show complete help message.
  \033[1mquit\033[0m  : Exit the program.
 
-\033[4mCommand line syntax\033[0m
+\033[4mCommand line syntax\033[0m:
  python fas.py -o <fileo> -f <valuef> -g <fileg> -t <filet> [...]
-\033[4mRequired arguments\033[0m
+\033[4mRequired arguments\033[0m:
  \033[1m-o <fileo>\033[0m
  \033[1m--output <fileo>\033[0m : The path to the output file. Output file will
         contain information about the arrangement produced by the
@@ -298,8 +304,8 @@ def cmd_hhelp():
                       The distance between any two consecutive
                       rows is H. The distance between any two
                       consecutive columns is W. Each point has
-                      the area A. N, M, and A must be natural, H
-                      and W must be positive.
+                      area A. N, M, and A must be natural, H and
+                      W must be positive.
         Note, that passing gN:HxM:WxA as the value might also
         enable some additional modifications in the algorithms to
         allow a faster convergence to an answer. To disable these
@@ -310,7 +316,7 @@ def cmd_hhelp():
  \033[1m-t <filet>\033[0m
  \033[1m-totalflows <filet>\033[0m : The path to a total flows description file
         in FAST format.
-\033[4mOptional arguments\033[0m
+\033[4mOptional arguments\033[0m:
  \033[1m-a <valuea>\033[0m
  \033[1m--algorithm <valuea>\033[0m : The algorithm to use for arrangement.
         Possible values of <valuea> are:
@@ -319,7 +325,7 @@ def cmd_hhelp():
                   rithm produces an \033[4moptimal\033[0m solution.
          cpr_linear : Use CPLEX solver to solve an integer opti-
                       misation problem using the compressed line-
-                      ar model. This algorithm produces an \033[4mopti-\033[0m
+                      ar model. This algorithm produces an \033[4mopti\033[0m-
                       \033[4mmal\033[0m solution.
          linear_gfred : Use CPLEX solver to solve multiple inte-
                         ger optimisation problems using the line-
@@ -331,7 +337,7 @@ def cmd_hhelp():
                             integer optimisation problems using
                             the compressed linear model on faci-
                             lities of reduced sizes. This algo-
-                            rithm produ ces a \033[4msuboptimal\033[0m solution
+                            rithm produces a \033[4msuboptimal\033[0m solution
                             unless proven that its solutions are
                             optimal.
         Note, that X_gfred algorithms only work for grid facili-
@@ -366,6 +372,7 @@ def run():
 	command_func = \
 	{
 		'cls'   : cmd_cls,
+		#'editd' : cmd_editd,
 		'editf' : cmd_editf,
 		'editg' : cmd_editg,
 		'editt' : cmd_editt,
